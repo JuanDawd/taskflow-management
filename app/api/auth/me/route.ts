@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
+import { JWTPayload } from '@/types'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
 		const decoded = jwt.verify(
 			token,
 			process.env.JWT_SECRET || 'fallback-secret',
-		) as any
+		) as JWTPayload
 
 		const user = await db.user.findUnique({
 			where: { id: decoded.userId },
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
 				},
 			},
 		})
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	} catch (error) {
 		return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
 	}

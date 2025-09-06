@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 import { companySchema } from '@/lib/validation'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
 	try {
 		const session = await getServerSession(authOptions)
 		if (!session?.user?.id) {
@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest) {
 	} catch (error) {
 		if (error instanceof z.ZodError) {
 			return NextResponse.json(
-				{ error: 'Datos inválidos', details: error.errors },
+				{ error: 'Datos inválidos', details: error.message },
 				{ status: 422 },
 			)
 		}

@@ -18,15 +18,11 @@ export async function GET(request: NextRequest, { params }: Context) {
 
 		const project = await db.project.findFirst({
 			where: {
-				id,
-				OR: [
-					{ ownerId: session.user.id },
+				AND: [
+					{ OR: [{ id }, { slug: id }] },
+					{ companyId: session.user.companyId },
 					{
-						members: {
-							some: {
-								userId: session.user.id,
-							},
-						},
+						OR: [{ members: { some: { userId: session.user.id } } }],
 					},
 				],
 			},
@@ -162,7 +158,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 	} catch (error) {
 		if (error instanceof z.ZodError) {
 			return NextResponse.json(
-				{ error: 'Datos inválidos', details: error.errors },
+				{ error: 'Datos inválidos', details: error.message },
 				{ status: 422 },
 			)
 		}

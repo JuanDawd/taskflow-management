@@ -253,7 +253,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 	} catch (error) {
 		if (error instanceof z.ZodError) {
 			return NextResponse.json(
-				{ error: 'Datos inválidos', details: error.errors },
+				{ error: 'Datos inválidos', details: error.message },
 				{ status: 422 },
 			)
 		}

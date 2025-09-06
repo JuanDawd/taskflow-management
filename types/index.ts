@@ -125,3 +125,12 @@ export interface Invitation {
 	updatedAt: string
 	invitedBy?: User
 }
+
+export interface JWTPayload {
+	userId: string
+	email: string
+	role: 'ADMIN' | 'USER'
+	companyId: string
+	iat?: number // issued at
+	exp?: number // expiration time
+}

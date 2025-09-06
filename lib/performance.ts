@@ -1,10 +1,9 @@
-import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
 
 // Cache expensive database queries
 export const getCachedTasks = unstable_cache(
 	async (projectId: string, userId: string) => {
-		const { prisma } = await import('@/lib/prisma')
+		const { db } = await import('@/lib/db')
 
 		return await db.task.findMany({
 			where: {
@@ -28,12 +27,11 @@ export const getCachedTasks = unstable_cache(
 
 export const getCachedProjects = unstable_cache(
 	async (companyId: string) => {
-		const { prisma } = await import('@/lib/prisma')
+		const { db } = await import('@/lib/db')
 
 		return await db.project.findMany({
 			where: {
 				companyId,
-				isActive: true,
 			},
 			include: {
 				_count: {

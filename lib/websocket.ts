@@ -1,10 +1,17 @@
+type WebSocketEventCallback<T = unknown> = (data: T) => void
+
+interface WebSocketMessage {
+	type: string
+	payload: unknown
+}
+
 export class WebSocketManager {
 	private ws: WebSocket | null = null
 	private url: string
 	private reconnectAttempts = 0
 	private maxReconnectAttempts = 5
 	private reconnectDelay = 1000
-	private listeners: Map<string, Set<Function>> = new Map()
+	private listeners: Map<string, Set<WebSocketEventCallback>> = new Map()
 	private isConnected = false
 
 	constructor(url: string) {
@@ -25,7 +32,7 @@ export class WebSocketManager {
 
 			this.ws.onmessage = (event) => {
 				try {
-					const data = JSON.parse(event.data)
+					const data = JSON.parse(event.data) as WebSocketMessage
 					this.emit(data.type, data.payload)
 				} catch (error) {
 					console.error('Error parsing WebSocket message:', error)
@@ -59,7 +66,7 @@ export class WebSocketManager {
 		}
 	}
 
-	public send(type: string, payload: any) {
+	public send(type: string, payload: unknown): void {
 		if (this.ws && this.ws.readyState === WebSocket.OPEN) {
 			this.ws.send(JSON.stringify({ type, payload }))
 		} else {
@@ -67,35 +74,35 @@ export class WebSocketManager {
 		}
 	}
 
-	public on(event: string, callback: Function) {
+	public on(event: string, callback: WebSocketEventCallback): void {
 		if (!this.listeners.has(event)) {
 			this.listeners.set(event, new Set())
 		}
 		this.listeners.get(event)!.add(callback)
 	}
 
-	public off(event: string, callback: Function) {
+	public off(event: string, callback: WebSocketEventCallback): void {
 		const eventListeners = this.listeners.get(event)
 		if (eventListeners) {
 			eventListeners.delete(callback)
 		}
 	}
 
-	private emit(event: string, data: any) {
+	private emit(event: string, data: unknown): void {
 		const eventListeners = this.listeners.get(event)
 		if (eventListeners) {
 			eventListeners.forEach((callback) => callback(data))
 		}
 	}
 
-	public disconnect() {
+	public disconnect(): void {
 		if (this.ws) {
 			this.ws.close()
 			this.ws = null
 		}
 	}
 
-	public getConnectionStatus() {
+	public getConnectionStatus(): boolean {
 		return this.isConnected
 	}
 }

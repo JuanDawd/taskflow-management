@@ -36,6 +36,7 @@ export const showInfoToast = (title: string, description?: string) => {
 export const useApiToast = () => {
 	const { toast } = useToast()
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const showApiError = (error: any) => {
 		toast({
 			variant: 'destructive',

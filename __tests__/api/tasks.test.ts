@@ -3,8 +3,8 @@ import { db } from '@/lib/db'
 import { NextRequest } from 'next/server'
 
 // Mock Prisma
-jest.mock('@/lib/prisma', () => ({
-	prisma: {
+jest.mock('@/lib/db', () => ({
+	db: {
 		task: {
 			create: jest.fn(),
 			findMany: jest.fn(),

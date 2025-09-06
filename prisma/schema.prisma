@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
 }
 
 datasource db {
@@ -17,6 +16,11 @@ datasource db {
 enum UserRole {
   ADMIN
   USER
+}
+
+enum ProjectRole {
+  ADMIN
+  MEMBER
 }
 
 enum TaskStatus {
@@ -44,6 +48,7 @@ model Company {
 
   users    User[]
   projects Project[]
+  teamMembers TeamMember[]
 
   @@map("companies")
 }
@@ -62,15 +67,35 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relaciones con tareas
+   // Relaciones con tareas
   assignedTasks Task[] @relation("AssignedTasks")
   createdTasks  Task[] @relation("CreatedTasks")
   comments      TaskComment[]
 
   // Relaciones con proyectos
   projectMembers ProjectMember[]
+  ownedProjects  Project[]       @relation("ProjectOwner")
+
+  // Relación con team members
+  teamMember TeamMember?
 
   @@map("users")
+}
+
+model TeamMember {
+  id   String      @id @default(cuid())
+  role ProjectRole @default(MEMBER)
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("team_members")
 }
 
 model Project {
@@ -82,6 +107,9 @@ model Project {
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -95,6 +123,7 @@ model Project {
 
 model ProjectMember {
   id String @id @default(cuid())
+  role ProjectRole @default(MEMBER)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -102,7 +131,6 @@ model ProjectMember {
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  role      UserRole @default(USER)
   joinedAt  DateTime @default(now())
 
   @@unique([userId, projectId])
@@ -132,6 +160,7 @@ model Task {
   createdBy   User   @relation("CreatedTasks", fields: [createdById], references: [id])
 
   comments TaskComment[]
+  attachments TaskAttachment[]
 
   @@map("tasks")
 }
@@ -150,4 +179,19 @@ model TaskComment {
   updatedAt DateTime @updatedAt
 
   @@map("task_comments")
+}
+
+model TaskAttachment {
+  id       String @id @default(cuid())
+  filename String
+  fileUrl  String
+  fileSize Int
+  mimeType String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  uploadedAt DateTime @default(now())
+
+  @@map("task_attachments")
 }

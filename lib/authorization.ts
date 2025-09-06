@@ -1,8 +1,16 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { User, Company, UserRole } from '@prisma/client'
 
-export async function getCurrentUser() {
+// Define the return type for getCurrentUser
+type CurrentUser = User & {
+	company: Company
+}
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
 	const session = await getServerSession(authOptions)
+
 	if (!session?.user?.email) {
 		return null
 	}
@@ -11,75 +19,92 @@ export async function getCurrentUser() {
 		where: { email: session.user.email },
 		include: {
 			company: true,
-			role: true,
 		},
 	})
 }
 
-export async function hasPermission(
-	userId: string,
-	action: string,
-	resource?: string,
-): Promise<boolean> {
-	const user = await db.user.findUnique({
-		where: { id: userId },
-		include: { role: { include: { permissions: true } } },
-	})
+export async function hasPermission(userId: string): Promise<boolean> {
+	try {
+		const user = await db.user.findUnique({
+			where: { id: userId },
+			select: {
+				role: true,
+			},
+		})
 
-	if (!user?.role) return false
+		if (!user) return false
 
-	// Check if user has the specific permission
-	const hasPermission = user.role.permissions.some(
-		(permission) => permission.name === `${action}:${resource || '*'}`,
-	)
-
-	// Check for admin role (has all permissions)
-	const isAdmin = user.role.name === 'ADMIN'
-
-	return hasPermission || isAdmin
+		return user.role === UserRole.ADMIN
+	} catch (error) {
+		console.error('Error checking permissions:', error)
+		return false
+	}
 }
 
 export async function canAccessProject(
 	userId: string,
 	projectId: string,
 ): Promise<boolean> {
-	const user = await db.user.findUnique({
-		where: { id: userId },
-		include: { company: true },
-	})
+	try {
+		const user = await db.user.findUnique({
+			where: { id: userId },
+			select: {
+				companyId: true,
+			},
+		})
 
-	if (!user) return false
+		if (!user) return false
 
-	const project = await db.project.findUnique({
-		where: { id: projectId },
-		include: { members: true },
-	})
+		const project = await db.project.findUnique({
+			where: { id: projectId },
+			select: {
+				companyId: true,
+				members: {
+					select: {
+						userId: true,
+					},
+				},
+			},
+		})
 
-	if (!project) return false
+		if (!project) return false
 
-	// Check if user belongs to the same company
-	if (project.companyId !== user.companyId) return false
+		// Check if user belongs to the same company
+		if (project.companyId !== user.companyId) return false
 
-	// Check if user is a member of the project
-	const isMember = project.members.some((member) => member.id === userId)
+		// Check if user is a member of the project
+		const isMember = project.members.some((member) => member.userId === userId)
 
-	return isMember
+		return isMember
+	} catch (error) {
+		console.error('Error checking project access:', error)
+		return false
+	}
 }
 
 export async function canAccessTask(
 	userId: string,
 	taskId: string,
 ): Promise<boolean> {
-	const task = await db.task.findUnique({
-		where: { id: taskId },
-		include: {
-			project: {
-				include: { members: true },
+	try {
+		const task = await db.task.findUnique({
+			where: { id: taskId },
+			select: {
+				projectId: true,
 			},
-		},
-	})
+		})
 
-	if (!task) return false
+		if (!task) return false
 
-	return await canAccessProject(userId, task.projectId)
+		return await canAccessProject(userId, task.projectId)
+	} catch (error) {
+		console.error('Error checking task access:', error)
+		return false
+	}
+}
+
+export interface AuthContext {
+	user?: CurrentUser
+	params?: Record<string, string>
+	[key: string]: unknown
 }

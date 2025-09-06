@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
 		const activeProjects = await db.project.count({
 			where: {
 				companyId: user.companyId,
-				isActive: true,
 			},
 		})
 
@@ -193,7 +192,6 @@ export async function GET(request: NextRequest) {
 		const projects = await db.project.findMany({
 			where: {
 				companyId: user.companyId,
-				isActive: true,
 			},
 			include: {
 				tasks: true,

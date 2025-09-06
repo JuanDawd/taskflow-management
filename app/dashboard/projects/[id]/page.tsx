@@ -1,10 +1,9 @@
-// app/dashboard/projects/[id]/page.tsx - VERSIÓN COMPLETA
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Project, Task, User } from '@/types'
-import { ImprovedKanbanBoard } from '@/components/kanban/ImprovedKanbanBoard'
+import KanbanBoard from '@/components/kanban/KanbanBoard'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -550,16 +549,7 @@ export default function ProjectDetailPage() {
 			</div>
 
 			{/* Kanban Board */}
-			<ImprovedKanbanBoard
-				tasks={tasks}
-				projects={[project]}
-				users={users}
-				currentProject={project}
-				onTaskMove={handleTaskMove}
-				onTaskCreate={handleTaskCreate}
-				onTaskEdit={handleTaskEdit}
-				onTaskDelete={handleTaskDelete}
-			/>
+			<KanbanBoard projectId={project.id} />
 		</div>
 	)
 }

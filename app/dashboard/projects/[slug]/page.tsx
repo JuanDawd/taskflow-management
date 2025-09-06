@@ -6,23 +6,8 @@ import KanbanBoard from '@/components/kanban/KanbanBoard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PersonIcon, GearIcon } from '@radix-ui/react-icons'
+import { Project } from '@prisma/client'
 
-interface Project {
-	id: string
-	name: string
-	description?: string
-	color: string
-	members: Array<{
-		user: {
-			id: string
-			name: string
-			role: string
-		}
-	}>
-	_count: {
-		tasks: number
-	}
-}
 
 export default function ProjectDetailPage() {
 	const params = useParams()

@@ -1,7 +1,9 @@
+// auth.ts
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
+import { UserRole } from '@prisma/client'
 
 export const authOptions: NextAuthOptions = {
 	providers: [
@@ -15,7 +17,6 @@ export const authOptions: NextAuthOptions = {
 				if (!credentials?.email || !credentials?.password) {
 					return null
 				}
-
 				try {
 					const user = await db.user.findUnique({
 						where: {
@@ -72,11 +73,15 @@ export const authOptions: NextAuthOptions = {
 			return token
 		},
 		async session({ session, token }) {
-			if (token) {
+			if (token && session.user) {
 				session.user.id = token.id as string
-				session.user.role = token.role as string
+				session.user.role = token.role as UserRole
 				session.user.companyId = token.companyId as string
-				session.user.company = token.company as any
+				session.user.company = token.company as {
+					id: string
+					name: string
+					slug: string
+				}
 			}
 			return session
 		},
@@ -88,11 +93,11 @@ export const authOptions: NextAuthOptions = {
 	secret: process.env.NEXTAUTH_SECRET,
 }
 
-// Tipos extendidos para NextAuth
+// Extended types for NextAuth
 declare module 'next-auth' {
 	interface User {
 		id: string
-		role: string
+		role: UserRole
 		companyId: string
 		company: {
 			id: string
@@ -106,7 +111,7 @@ declare module 'next-auth' {
 			id: string
 			email: string
 			name: string
-			role: string
+			role: UserRole
 			companyId: string
 			company: {
 				id: string
@@ -120,7 +125,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
 	interface JWT {
 		id: string
-		role: string
+		role: UserRole
 		companyId: string
 		company: {
 			id: string
