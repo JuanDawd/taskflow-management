@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-	experimental: {
-		appDir: true,
-	},
 	images: {
 		domains: ['localhost', 'your-domain.com'],
 		formats: ['image/webp', 'image/avif'],
@@ -13,8 +10,6 @@ const nextConfig: NextConfig = {
 	},
 	// Enable compression
 	compress: true,
-	// Enable SWC minify
-	swcMinify: true,
 	// Output standalone for Docker
 	output: 'standalone',
 	// Optimize bundles
@@ -31,6 +26,7 @@ const nextConfig: NextConfig = {
 		? {
 				webpack: (config) => {
 					config.plugins.push(
+						// eslint-disable-next-line @typescript-eslint/no-require-imports
 						new (require('@next/bundle-analyzer'))({
 							enabled: true,
 							openAnalyzer: true,

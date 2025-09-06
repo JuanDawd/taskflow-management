@@ -1,41 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import { db } from '@/lib/db'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { projectSchema } from '@/lib/validation'
+import { z } from 'zod'
 
 export async function GET(request: NextRequest) {
 	try {
-		const token = request.cookies.get('auth-token')?.value
-
-		if (!token) {
-			return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+		const session = await getServerSession(authOptions)
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		const decoded = jwt.verify(
-			token,
-			process.env.JWT_SECRET || 'fallback-secret',
-		) as any
-		const companyId = decoded.companyId
+		const { searchParams } = new URL(request.url)
+		const status = searchParams.get('status')
+		const priority = searchParams.get('priority')
 
-		const projects = await db.project.findMany({
+		const projects = await prisma.project.findMany({
 			where: {
-				companyId,
+				OR: [
+					{ ownerId: session.user.id },
+					{
+						members: {
+							some: {
+								userId: session.user.id,
+							},
+						},
+					},
+				],
+				...(status && { status: status as any }),
+				...(priority && { priority: priority as any }),
 			},
 			include: {
+				members: {
+					include: {
+						user: true,
+					},
+				},
 				_count: {
 					select: {
 						tasks: true,
 						members: true,
-					},
-				},
-				members: {
-					include: {
-						user: {
-							select: {
-								id: true,
-								name: true,
-								role: true,
-							},
-						},
 					},
 				},
 			},
@@ -44,7 +49,12 @@ export async function GET(request: NextRequest) {
 			},
 		})
 
-		return NextResponse.json({ projects })
+		const formattedProjects = projects.map((project) => ({
+			...project,
+			members: project.members.map((member) => member.user),
+		}))
+
+		return NextResponse.json(formattedProjects)
 	} catch (error) {
 		console.error('Error fetching projects:', error)
 		return NextResponse.json(
@@ -56,70 +66,57 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
 	try {
-		const token = request.cookies.get('auth-token')?.value
-
-		if (!token) {
-			return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+		const session = await getServerSession(authOptions)
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		const decoded = jwt.verify(
-			token,
-			process.env.JWT_SECRET || 'fallback-secret',
-		) as any
-		const userId = decoded.userId
-		const companyId = decoded.companyId
-		const userRole = decoded.role
+		const body = await request.json()
+		const validatedData = projectSchema.parse(body)
 
-		// Solo admins pueden crear proyectos
-		if (userRole !== 'ADMIN') {
-			return NextResponse.json(
-				{
-					error: 'Solo los administradores pueden crear proyectos',
-				},
-				{ status: 403 },
-			)
-		}
-
-		const { name, description, slug, color } = await request.json()
-
-		// Verificar que el slug no existe en la empresa
-		const existingProject = await db.project.findFirst({
-			where: {
-				companyId,
-				slug,
-			},
-		})
-
-		if (existingProject) {
-			return NextResponse.json(
-				{
-					error: 'Ya existe un proyecto con ese identificador',
-				},
-				{ status: 400 },
-			)
-		}
-
-		const project = await db.project.create({
+		const project = await prisma.project.create({
 			data: {
-				name,
-				description,
-				slug,
-				color: color || '#3B82F6',
-				companyId,
+				...validatedData,
+				ownerId: session.user.id,
+				companyId: session.user.companyId, // Assuming user has companyId
+				members: body.memberIds
+					? {
+							create: body.memberIds.map((userId: string) => ({
+								userId,
+								role: 'MEMBER',
+							})),
+					  }
+					: undefined,
+			},
+			include: {
+				members: {
+					include: {
+						user: true,
+					},
+				},
+				_count: {
+					select: {
+						tasks: true,
+						members: true,
+					},
+				},
 			},
 		})
 
-		// Agregar al creador como miembro del proyecto
-		await db.projectMember.create({
-			data: {
-				userId,
-				projectId: project.id,
-				role: 'ADMIN',
-			},
-		})
+		const formattedProject = {
+			...project,
+			members: project.members.map((member) => member.user),
+		}
 
-		return NextResponse.json({ project })
+		return NextResponse.json(formattedProject, { status: 201 })
 	} catch (error) {
+		if (error instanceof z.ZodError) {
+			return NextResponse.json(
+				{ error: 'Datos inválidos', details: error.errors },
+				{ status: 422 },
+			)
+		}
+
 		console.error('Error creating project:', error)
 		return NextResponse.json(
 			{ error: 'Error interno del servidor' },

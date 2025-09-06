@@ -1,0 +1,75 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { commentSchema } from '@/lib/validation'
+import { z } from 'zod'
+
+export async function POST(request: NextRequest) {
+	try {
+		const session = await getServerSession(authOptions)
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+		}
+
+		const body = await request.json()
+		const validatedData = commentSchema.parse(body)
+
+		// Check if user has access to the task
+		const task = await prisma.task.findFirst({
+			where: {
+				id: validatedData.taskId,
+				project: {
+					OR: [
+						{ ownerId: session.user.id },
+						{
+							members: {
+								some: {
+									userId: session.user.id,
+								},
+							},
+						},
+					],
+				},
+			},
+		})
+
+		if (!task) {
+			return NextResponse.json(
+				{ error: 'Tarea no encontrada o sin permisos' },
+				{ status: 404 },
+			)
+		}
+
+		const comment = await prisma.comment.create({
+			data: {
+				...validatedData,
+				userId: session.user.id,
+				parentId: body.parentId || null,
+			},
+			include: {
+				user: true,
+				replies: {
+					include: {
+						user: true,
+					},
+				},
+			},
+		})
+
+		return NextResponse.json(comment, { status: 201 })
+	} catch (error) {
+		if (error instanceof z.ZodError) {
+			return NextResponse.json(
+				{ error: 'Datos inválidos', details: error.errors },
+				{ status: 422 },
+			)
+		}
+
+		console.error('Error creating comment:', error)
+		return NextResponse.json(
+			{ error: 'Error interno del servidor' },
+			{ status: 500 },
+		)
+	}
+}
