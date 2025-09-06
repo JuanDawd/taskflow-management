@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Task, User } from '@/types'
+import { useState, useMemo } from 'react'
+import { Task } from '@/types'
 import { SearchFilters } from '@/components/search/AdvancedSearch'
 
-export function useTaskSearch(tasks: Task[], users: User[]) {
+export function useTaskSearch(tasks: Task[]) {
 	const [filters, setFilters] = useState<SearchFilters>({
 		query: '',
 		status: [],

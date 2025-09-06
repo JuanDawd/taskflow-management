@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { User, Project } from '@/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -43,11 +43,8 @@ import {
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import {
-	Plus,
 	MoreHorizontal,
-	Mail,
-	Shield,
-	User as UserIcon,
+	UserIcon,
 	Edit,
 	Trash2,
 	UserPlus,

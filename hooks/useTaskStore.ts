@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { useToast } from '@/hooks/use-toast'
 
 interface Task {
 	id: string
@@ -50,12 +49,12 @@ interface TaskStore {
 	) => Promise<void>
 }
 
-export const useTaskStore = create<TaskStore>((set, get) => ({
+export const useTaskStore = create<TaskStore>((set) => ({
 	tasks: [],
 	isLoading: false,
 	error: null,
 
-	fetchTasks: async (projectId) => {
+	fetchTasks: async (projectId: string) => {
 		set({ isLoading: true, error: null })
 		try {
 			const url = projectId ? `/api/tasks?projectId=${projectId}` : '/api/tasks'

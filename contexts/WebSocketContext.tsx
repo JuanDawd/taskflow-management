@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect } from 'react'
+import { createContext, useContext } from 'react'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useTaskStore } from '@/hooks/useTaskStore'
 import { useNotificationStore } from '@/hooks/useNotificationStore'

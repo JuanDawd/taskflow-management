@@ -36,6 +36,7 @@ import {
 	Target,
 	Activity,
 } from 'lucide-react'
+import { Button } from '../ui/button'
 
 interface DashboardMetrics {
 	totalTasks: number
@@ -61,17 +62,6 @@ interface DashboardMetrics {
 		total: number
 		percentage: number
 	}>
-}
-
-const COLORS = {
-	TODO: '#94a3b8',
-	IN_PROGRESS: '#3b82f6',
-	REVIEW: '#f59e0b',
-	DONE: '#10b981',
-	LOW: '#06b6d4',
-	MEDIUM: '#eab308',
-	HIGH: '#f97316',
-	URGENT: '#ef4444',
 }
 
 export function Dashboard() {
