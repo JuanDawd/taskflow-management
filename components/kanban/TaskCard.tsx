@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import {
 	CalendarIcon,
 	PersonIcon,
-	DotsHorizontalIcon,
 	Pencil1Icon,
 	TrashIcon,
 } from '@radix-ui/react-icons'
