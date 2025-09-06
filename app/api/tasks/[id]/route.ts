@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { taskSchema } from '@/lib/validation'
 import { z } from 'zod'
 
 interface Context {
-	params: { id: string }
+	params: Promise<{ id: string }>
 }
 
 export async function GET(request: NextRequest, { params }: Context) {
@@ -16,9 +16,11 @@ export async function GET(request: NextRequest, { params }: Context) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		const task = await prisma.task.findFirst({
+		const { id } = await params
+
+		const task = await db.task.findFirst({
 			where: {
-				id: params.id,
+				id,
 				project: {
 					OR: [
 						{ ownerId: session.user.id },
@@ -92,10 +94,12 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		const body = await request.json()
 		const validatedData = taskSchema.partial().parse(body)
 
+		const { id } = await params
+
 		// Check permissions
-		const existingTask = await prisma.task.findFirst({
+		const existingTask = await db.task.findFirst({
 			where: {
-				id: params.id,
+				id,
 				project: {
 					OR: [
 						{ ownerId: session.user.id },
@@ -119,8 +123,8 @@ export async function PUT(request: NextRequest, { params }: Context) {
 			)
 		}
 
-		const updatedTask = await prisma.task.update({
-			where: { id: params.id },
+		const updatedTask = await db.task.update({
+			where: { id },
 			data: validatedData,
 			include: {
 				assignee: true,
@@ -158,10 +162,12 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
+		const { id } = await params
+
 		// Check permissions
-		const task = await prisma.task.findFirst({
+		const task = await db.task.findFirst({
 			where: {
-				id: params.id,
+				id,
 				project: {
 					OR: [
 						{ ownerId: session.user.id },
@@ -185,8 +191,8 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 			)
 		}
 
-		await prisma.task.delete({
-			where: { id: params.id },
+		await db.task.delete({
+			where: { id },
 		})
 
 		return NextResponse.json({ message: 'Tarea eliminada correctamente' })

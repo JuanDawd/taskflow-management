@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 		const unreadOnly = searchParams.get('unreadOnly') === 'true'
 		const limit = parseInt(searchParams.get('limit') || '50')
 
-		const notifications = await prisma.notification.findMany({
+		const notifications = await db.notification.findMany({
 			where: {
 				userId: session.user.id,
 				...(unreadOnly && { read: false }),

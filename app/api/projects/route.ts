@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { projectSchema } from '@/lib/validation'
 import { z } from 'zod'
 
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 		const status = searchParams.get('status')
 		const priority = searchParams.get('priority')
 
-		const projects = await prisma.project.findMany({
+		const projects = await db.project.findMany({
 			where: {
 				OR: [
 					{ ownerId: session.user.id },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 		const body = await request.json()
 		const validatedData = projectSchema.parse(body)
 
-		const project = await prisma.project.create({
+		const project = await db.project.create({
 			data: {
 				...validatedData,
 				ownerId: session.user.id,

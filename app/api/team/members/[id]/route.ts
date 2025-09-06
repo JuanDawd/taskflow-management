@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { z } from 'zod'
 
 interface Context {
-	params: { id: string }
+	params: Promise<{ id: string }>
 }
 
 // Validation schema for member update
@@ -21,10 +21,12 @@ export async function GET(request: NextRequest, { params }: Context) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
+		const { id } = await params
+
 		// Get member details with projects
-		const member = await prisma.teamMember.findFirst({
+		const member = await db.teamMember.findFirst({
 			where: {
-				id: params.id,
+				id,
 				companyId: session.user.companyId, // Ensure same company
 			},
 			include: {
@@ -83,7 +85,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		const { role, projectIds } = validatedData
 
 		// Check if user is admin
-		const adminMember = await prisma.teamMember.findFirst({
+		const adminMember = await db.teamMember.findFirst({
 			where: {
 				userId: session.user.id,
 				companyId: session.user.companyId,
@@ -98,10 +100,12 @@ export async function PUT(request: NextRequest, { params }: Context) {
 			)
 		}
 
+		const { id } = await params
+
 		// Get the member to update
-		const existingMember = await prisma.teamMember.findFirst({
+		const existingMember = await db.teamMember.findFirst({
 			where: {
-				id: params.id,
+				id,
 				companyId: session.user.companyId,
 			},
 			include: {
@@ -126,7 +130,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 
 		// Ensure at least one admin remains
 		if (role && role !== 'ADMIN' && existingMember.role === 'ADMIN') {
-			const adminCount = await prisma.teamMember.count({
+			const adminCount = await db.teamMember.count({
 				where: {
 					companyId: session.user.companyId,
 					role: 'ADMIN',
@@ -142,13 +146,13 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		}
 
 		// Start transaction for atomic updates
-		const result = await prisma.$transaction(async (tx) => {
+		const result = await db.$transaction(async (tx) => {
 			// Update member role if provided
 			let updatedMember = existingMember
 			if (role && role !== existingMember.role) {
 				updatedMember = await tx.teamMember.update({
 					where: {
-						id: params.id,
+						id,
 					},
 					data: {
 						role,
@@ -218,8 +222,8 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		})
 
 		// Get updated member with projects
-		const memberWithProjects = await prisma.teamMember.findUnique({
-			where: { id: params.id },
+		const memberWithProjects = await db.teamMember.findUnique({
+			where: { id },
 			include: {
 				user: true,
 				projects: {
@@ -273,7 +277,7 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 		}
 
 		// Check admin permissions
-		const adminMember = await prisma.teamMember.findFirst({
+		const adminMember = await db.teamMember.findFirst({
 			where: {
 				userId: session.user.id,
 				companyId: session.user.companyId,
@@ -288,10 +292,12 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 			)
 		}
 
+		const { id } = await params
+
 		// Get the member to delete
-		const memberToDelete = await prisma.teamMember.findFirst({
+		const memberToDelete = await db.teamMember.findFirst({
 			where: {
-				id: params.id,
+				id,
 				companyId: session.user.companyId,
 			},
 			include: {
@@ -316,7 +322,7 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 
 		// Ensure at least one admin remains
 		if (memberToDelete.role === 'ADMIN') {
-			const adminCount = await prisma.teamMember.count({
+			const adminCount = await db.teamMember.count({
 				where: {
 					companyId: session.user.companyId,
 					role: 'ADMIN',
@@ -332,7 +338,7 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 		}
 
 		// Check if member has active tasks
-		const activeTasks = await prisma.task.count({
+		const activeTasks = await db.task.count({
 			where: {
 				assigneeId: memberToDelete.userId,
 				status: { in: ['TODO', 'IN_PROGRESS', 'REVIEW'] },
@@ -350,7 +356,7 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 		}
 
 		// Start transaction for atomic deletion
-		await prisma.$transaction(async (tx) => {
+		await db.$transaction(async (tx) => {
 			// Remove from all projects
 			await tx.projectMember.deleteMany({
 				where: {
@@ -361,7 +367,7 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 			// Remove team membership
 			await tx.teamMember.delete({
 				where: {
-					id: params.id,
+					id,
 				},
 			})
 

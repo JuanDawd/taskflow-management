@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { memberInviteSchema } from '@/lib/validation'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		const members = await prisma.teamMember.findMany({
+		const members = await db.teamMember.findMany({
 			where: {
 				companyId: session.user.companyId,
 			},
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Check if user is admin
-		const member = await prisma.teamMember.findFirst({
+		const member = await db.teamMember.findFirst({
 			where: {
 				userId: session.user.id,
 				companyId: session.user.companyId,
@@ -74,13 +74,13 @@ export async function POST(request: NextRequest) {
 		const validatedData = memberInviteSchema.parse(body)
 
 		// Check if user already exists
-		const existingUser = await prisma.user.findUnique({
+		const existingUser = await db.user.findUnique({
 			where: { email: validatedData.email },
 		})
 
 		if (existingUser) {
 			// Check if already a member
-			const existingMember = await prisma.teamMember.findFirst({
+			const existingMember = await db.teamMember.findFirst({
 				where: {
 					userId: existingUser.id,
 					companyId: session.user.companyId,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Create invitation
-		const invitation = await prisma.invitation.create({
+		const invitation = await db.invitation.create({
 			data: {
 				email: validatedData.email,
 				role: validatedData.role,

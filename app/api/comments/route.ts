@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { commentSchema } from '@/lib/validation'
 import { z } from 'zod'
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 		const validatedData = commentSchema.parse(body)
 
 		// Check if user has access to the task
-		const task = await prisma.task.findFirst({
+		const task = await db.task.findFirst({
 			where: {
 				id: validatedData.taskId,
 				project: {
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		const comment = await prisma.comment.create({
+		const comment = await db.comment.create({
 			data: {
 				...validatedData,
 				userId: session.user.id,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		if (error instanceof z.ZodError) {
 			return NextResponse.json(
-				{ error: 'Datos inválidos', details: error.errors },
+				{ error: 'Datos inválidos', details: error.message },
 				{ status: 422 },
 			)
 		}

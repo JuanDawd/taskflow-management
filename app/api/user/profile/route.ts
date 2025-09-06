@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { userProfileSchema } from '@/lib/validation'
 import { z } from 'zod'
 
@@ -12,7 +11,7 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		const user = await prisma.user.findUnique({
+		const user = await db.user.findUnique({
 			where: { id: session.user.id },
 			include: {
 				teamMember: true,
@@ -49,7 +48,7 @@ export async function PUT(request: NextRequest) {
 		const body = await request.json()
 		const validatedData = userProfileSchema.parse(body)
 
-		const updatedUser = await prisma.user.update({
+		const updatedUser = await db.user.update({
 			where: { id: session.user.id },
 			data: validatedData,
 		})

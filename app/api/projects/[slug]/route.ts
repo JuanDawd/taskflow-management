@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
 
-export async function GET(
-	request: NextRequest,
-	{ params }: { params: { slug: string } },
-) {
+interface Context {
+	params: Promise<{ slug: string }> // ✅ Promise
+}
+
+export async function GET(request: NextRequest, { params }: Context) {
 	try {
 		const token = request.cookies.get('auth-token')?.value
 
@@ -19,7 +20,7 @@ export async function GET(
 		) as any
 		const companyId = decoded.companyId
 
-		const { slug } = params
+		const { slug } = await params
 
 		const project = await db.project.findFirst({
 			where: {

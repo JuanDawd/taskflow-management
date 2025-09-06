@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 interface Context {
-	params: { id: string }
+	params: Promise<{ id: string }>
 }
 
 export async function POST(request: NextRequest, { params }: Context) {
@@ -17,10 +17,12 @@ export async function POST(request: NextRequest, { params }: Context) {
 		const body = await request.json()
 		const { status, position } = body
 
+		const { id } = await params
+
 		// Check permissions
-		const task = await prisma.task.findFirst({
+		const task = await db.task.findFirst({
 			where: {
-				id: params.id,
+				id: id,
 				project: {
 					OR: [
 						{ ownerId: session.user.id },
@@ -45,8 +47,8 @@ export async function POST(request: NextRequest, { params }: Context) {
 		}
 
 		// Update task status and position
-		const updatedTask = await prisma.task.update({
-			where: { id: params.id },
+		const updatedTask = await db.task.update({
+			where: { id },
 			data: {
 				status,
 				position: position || 0,

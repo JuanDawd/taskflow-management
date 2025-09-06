@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card,  CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PlusIcon } from '@radix-ui/react-icons'
-import TaskCard from './TaskCard'
+import { TaskCard } from './TaskCard'
 import CreateTaskDialog from './CreateTaskDialog'
 
 interface Task {

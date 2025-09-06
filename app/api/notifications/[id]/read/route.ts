@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 
 interface Context {
-	params: { id: string }
+	params: Promise<{ id: string }> // Ahora es Promise
 }
 
 export async function POST(request: NextRequest, { params }: Context) {
@@ -13,10 +13,11 @@ export async function POST(request: NextRequest, { params }: Context) {
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
+		const { id } = await params
 
-		await prisma.notification.updateMany({
+		await db.notification.updateMany({
 			where: {
-				id: params.id,
+				id,
 				userId: session.user.id,
 			},
 			data: {

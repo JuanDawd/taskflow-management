@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -8,7 +7,7 @@ export async function getCurrentUser() {
 		return null
 	}
 
-	return await prisma.user.findUnique({
+	return await db.user.findUnique({
 		where: { email: session.user.email },
 		include: {
 			company: true,
@@ -22,7 +21,7 @@ export async function hasPermission(
 	action: string,
 	resource?: string,
 ): Promise<boolean> {
-	const user = await prisma.user.findUnique({
+	const user = await db.user.findUnique({
 		where: { id: userId },
 		include: { role: { include: { permissions: true } } },
 	})
@@ -44,14 +43,14 @@ export async function canAccessProject(
 	userId: string,
 	projectId: string,
 ): Promise<boolean> {
-	const user = await prisma.user.findUnique({
+	const user = await db.user.findUnique({
 		where: { id: userId },
 		include: { company: true },
 	})
 
 	if (!user) return false
 
-	const project = await prisma.project.findUnique({
+	const project = await db.project.findUnique({
 		where: { id: projectId },
 		include: { members: true },
 	})
@@ -71,7 +70,7 @@ export async function canAccessTask(
 	userId: string,
 	taskId: string,
 ): Promise<boolean> {
-	const task = await prisma.task.findUnique({
+	const task = await db.task.findUnique({
 		where: { id: taskId },
 		include: {
 			project: {

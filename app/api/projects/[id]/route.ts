@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { projectSchema } from '@/lib/validation'
 import { z } from 'zod'
 
 interface Context {
-	params: { id: string }
+	params: Promise<{ id: string }> // Ahora es Promise
 }
-
 export async function GET(request: NextRequest, { params }: Context) {
 	try {
+		const { id } = await params
 		const session = await getServerSession(authOptions)
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		const project = await prisma.project.findFirst({
+		const project = await db.project.findFirst({
 			where: {
-				id: params.id,
+				id,
 				OR: [
 					{ ownerId: session.user.id },
 					{
@@ -85,10 +85,12 @@ export async function PUT(request: NextRequest, { params }: Context) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
+		const { id } = await params
+
 		// Check if user has permission to edit project
-		const existingProject = await prisma.project.findFirst({
+		const existingProject = await db.project.findFirst({
 			where: {
-				id: params.id,
+				id,
 				OR: [
 					{ ownerId: session.user.id },
 					{
@@ -114,8 +116,8 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		const validatedData = projectSchema.parse(body)
 
 		// Update project
-		const updatedProject = await prisma.project.update({
-			where: { id: params.id },
+		const updatedProject = await db.project.update({
+			where: { id },
 			data: validatedData,
 			include: {
 				members: {
@@ -135,15 +137,15 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		// Update members if provided
 		if (body.memberIds) {
 			// Remove existing members
-			await prisma.projectMember.deleteMany({
-				where: { projectId: params.id },
+			await db.projectMember.deleteMany({
+				where: { projectId: id },
 			})
 
 			// Add new members
 			if (body.memberIds.length > 0) {
-				await prisma.projectMember.createMany({
+				await db.projectMember.createMany({
 					data: body.memberIds.map((userId: string) => ({
-						projectId: params.id,
+						projectId: id,
 						userId,
 						role: 'MEMBER',
 					})),
@@ -181,7 +183,7 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 		}
 
 		// Check admin permissions
-		const adminMember = await prisma.teamMember.findFirst({
+		const adminMember = await db.teamMember.findFirst({
 			where: {
 				userId: session.user.id,
 				companyId: session.user.companyId,
@@ -196,9 +198,11 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 			)
 		}
 
+		const { id } = await params
+
 		// Cannot delete yourself
-		const memberToDelete = await prisma.teamMember.findUnique({
-			where: { id: params.id },
+		const memberToDelete = await db.teamMember.findUnique({
+			where: { id },
 		})
 
 		if (memberToDelete?.userId === session.user.id) {
@@ -209,8 +213,8 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 		}
 
 		// Delete member and all related data
-		await prisma.teamMember.delete({
-			where: { id: params.id },
+		await db.teamMember.delete({
+			where: { id },
 		})
 
 		return NextResponse.json({ message: 'Miembro eliminado correctamente' })

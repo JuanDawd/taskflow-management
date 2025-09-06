@@ -6,7 +6,7 @@ export const getCachedTasks = unstable_cache(
 	async (projectId: string, userId: string) => {
 		const { prisma } = await import('@/lib/prisma')
 
-		return await prisma.task.findMany({
+		return await db.task.findMany({
 			where: {
 				projectId,
 				OR: [
@@ -30,7 +30,7 @@ export const getCachedProjects = unstable_cache(
 	async (companyId: string) => {
 		const { prisma } = await import('@/lib/prisma')
 
-		return await prisma.project.findMany({
+		return await db.project.findMany({
 			where: {
 				companyId,
 				isActive: true,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { companySchema } from '@/lib/validation'
 import { z } from 'zod'
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		const company = await prisma.company.findUnique({
+		const company = await db.company.findUnique({
 			where: { id: session.user.companyId },
 			include: {
 				_count: {
@@ -49,7 +49,7 @@ export async function PUT(request: NextRequest) {
 		}
 
 		// Check admin permissions
-		const member = await prisma.teamMember.findFirst({
+		const member = await db.teamMember.findFirst({
 			where: {
 				userId: session.user.id,
 				companyId: session.user.companyId,
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest) {
 		const body = await request.json()
 		const validatedData = companySchema.parse(body)
 
-		const updatedCompany = await prisma.company.update({
+		const updatedCompany = await db.company.update({
 			where: { id: session.user.companyId },
 			data: validatedData,
 		})

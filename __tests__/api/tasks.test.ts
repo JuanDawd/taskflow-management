@@ -1,5 +1,5 @@
 import { POST, GET } from '@/app/api/tasks/route'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { NextRequest } from 'next/server'
 
 // Mock Prisma
@@ -39,7 +39,7 @@ describe('/api/tasks', () => {
 				projectId: 'project-1',
 			}
 
-			;(prisma.task.create as jest.Mock).mockResolvedValue(mockTask)
+			;(db.task.create as jest.Mock).mockResolvedValue(mockTask)
 
 			const request = new NextRequest('http://localhost/api/tasks', {
 				method: 'POST',
@@ -55,7 +55,7 @@ describe('/api/tasks', () => {
 
 			expect(response.status).toBe(201)
 			expect(data).toEqual(mockTask)
-			expect(prisma.task.create).toHaveBeenCalledWith({
+			expect(db.task.create).toHaveBeenCalledWith({
 				data: expect.objectContaining({
 					title: 'Test Task',
 					description: 'Test Description',
@@ -86,7 +86,7 @@ describe('/api/tasks', () => {
 				{ id: 'task-2', title: 'Task 2', status: 'DONE' },
 			]
 
-			;(prisma.task.findMany as jest.Mock).mockResolvedValue(mockTasks)
+			;(db.task.findMany as jest.Mock).mockResolvedValue(mockTasks)
 
 			const request = new NextRequest('http://localhost/api/tasks')
 			const response = await GET(request)

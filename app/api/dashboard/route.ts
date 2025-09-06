@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 		const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000)
 
 		// Get user's company
-		const user = await prisma.user.findUnique({
+		const user = await db.user.findUnique({
 			where: { email: session.user.email },
 			include: { company: true },
 		})
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Fetch all tasks for the company
-		const tasks = await prisma.task.findMany({
+		const tasks = await db.task.findMany({
 			where: {
 				project: {
 					companyId: user.companyId,
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 		).length
 
 		// Get active projects
-		const activeProjects = await prisma.project.count({
+		const activeProjects = await db.project.count({
 			where: {
 				companyId: user.companyId,
 				isActive: true,
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 		})
 
 		// Get team members
-		const teamMembers = await prisma.user.count({
+		const teamMembers = await db.user.count({
 			where: { companyId: user.companyId },
 		})
 
@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Top performers
-		const userPerformance = await prisma.user.findMany({
+		const userPerformance = await db.user.findMany({
 			where: { companyId: user.companyId },
 			include: {
 				assignedTasks: {
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
 			.slice(0, 5)
 
 		// Project progress
-		const projects = await prisma.project.findMany({
+		const projects = await db.project.findMany({
 			where: {
 				companyId: user.companyId,
 				isActive: true,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { db } from '@/lib/db'
 import { taskSchema } from '@/lib/validation'
 import { z } from 'zod'
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 		const priority = searchParams.get('priority')
 		const search = searchParams.get('search')
 
-		const tasks = await prisma.task.findMany({
+		const tasks = await db.task.findMany({
 			where: {
 				project: {
 					OR: [
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 		const validatedData = taskSchema.parse(body)
 
 		// Check if user has access to the project
-		const project = await prisma.project.findFirst({
+		const project = await db.project.findFirst({
 			where: {
 				id: validatedData.projectId,
 				OR: [
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Get the highest position for the status
-		const lastTask = await prisma.task.findFirst({
+		const lastTask = await db.task.findFirst({
 			where: {
 				projectId: validatedData.projectId,
 				status: validatedData.status,
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
 		const position = lastTask ? lastTask.position + 1 : 0
 
-		const task = await prisma.task.create({
+		const task = await db.task.create({
 			data: {
 				...validatedData,
 				position,

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
 
-export async function PATCH(
-	request: NextRequest,
-	{ params }: { params: { taskId: string } },
-) {
+interface Context {
+	params: Promise<{ taskId: string }>
+}
+
+export async function PATCH(request: NextRequest, { params }: Context) {
 	try {
 		const token = request.cookies.get('auth-token')?.value
 
@@ -20,7 +21,7 @@ export async function PATCH(
 		const userId = decoded.userId
 		const userRole = decoded.role
 
-		const { taskId } = params
+		const { taskId } = await params
 		const updateData = await request.json()
 
 		// Verificar que la tarea existe y el usuario tiene acceso
@@ -105,10 +106,7 @@ export async function PATCH(
 	}
 }
 
-export async function DELETE(
-	request: NextRequest,
-	{ params }: { params: { taskId: string } },
-) {
+export async function DELETE(request: NextRequest, { params }: Context) {
 	try {
 		const token = request.cookies.get('auth-token')?.value
 
@@ -123,7 +121,7 @@ export async function DELETE(
 		const userId = decoded.userId
 		const userRole = decoded.role
 
-		const { taskId } = params
+		const { taskId } = await params
 
 		// Verificar que la tarea existe y el usuario tiene acceso
 		const existingTask = await db.task.findFirst({
