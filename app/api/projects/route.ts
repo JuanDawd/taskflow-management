@@ -5,16 +5,12 @@ import { db } from '@/lib/db'
 import { projectSchema } from '@/lib/validation'
 import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
 	try {
 		const session = await getServerSession(authOptions)
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
-
-		const { searchParams } = new URL(request.url)
-		const status = searchParams.get('status')
-		const priority = searchParams.get('priority')
 
 		const projects = await db.project.findMany({
 			where: {
@@ -28,8 +24,6 @@ export async function GET(request: NextRequest) {
 						},
 					},
 				],
-				...(status && { status: status as any }),
-				...(priority && { priority: priority as any }),
 			},
 			include: {
 				members: {
@@ -78,7 +72,7 @@ export async function POST(request: NextRequest) {
 			data: {
 				...validatedData,
 				ownerId: session.user.id,
-				companyId: session.user.companyId, // Assuming user has companyId
+				companyId: session.user.companyId,
 				members: body.memberIds
 					? {
 							create: body.memberIds.map((userId: string) => ({

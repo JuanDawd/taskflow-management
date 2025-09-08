@@ -93,7 +93,7 @@ export function CommentSystem({
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        setErrors({ content: error.errors[0]?.message || 'Error de validación' });
+        setErrors({ content: error.issues[0]?.message || 'Error de validación' });
       }
     } finally {
       setIsLoading(false);
@@ -111,7 +111,7 @@ export function CommentSystem({
       setEditContent('');
     } catch (error) {
       if (error instanceof z.ZodError) {
-        setErrors({ edit: error.errors[0]?.message || 'Error de validación' });
+        setErrors({ edit: error.issues[0]?.message || 'Error de validación' });
       }
     } finally {
       setIsLoading(false);

@@ -21,21 +21,10 @@ import {
 	PieChart,
 	Pie,
 	Cell,
-	LineChart,
-	Line,
 	Area,
 	AreaChart,
 } from 'recharts'
-import {
-	Calendar,
-	Clock,
-	Users,
-	CheckCircle,
-	AlertCircle,
-	TrendingUp,
-	Target,
-	Activity,
-} from 'lucide-react'
+import { CheckCircle, AlertCircle, TrendingUp, Target } from 'lucide-react'
 import { Button } from '../ui/button'
 
 interface DashboardMetrics {
@@ -70,23 +59,22 @@ export function Dashboard() {
 	const [timeRange, setTimeRange] = useState('7d')
 
 	useEffect(() => {
+		const fetchDashboardData = async () => {
+			try {
+				setIsLoading(true)
+				const response = await fetch(`/api/dashboard?range=${timeRange}`)
+				if (response.ok) {
+					const data = await response.json()
+					setMetrics(data)
+				}
+			} catch (error) {
+				console.error('Error fetching dashboard data:', error)
+			} finally {
+				setIsLoading(false)
+			}
+		}
 		fetchDashboardData()
 	}, [timeRange])
-
-	const fetchDashboardData = async () => {
-		try {
-			setIsLoading(true)
-			const response = await fetch(`/api/dashboard?range=${timeRange}`)
-			if (response.ok) {
-				const data = await response.json()
-				setMetrics(data)
-			}
-		} catch (error) {
-			console.error('Error fetching dashboard data:', error)
-		} finally {
-			setIsLoading(false)
-		}
-	}
 
 	if (isLoading) {
 		return (
@@ -184,7 +172,7 @@ export function Dashboard() {
 									cy="50%"
 									labelLine={false}
 									label={({ name, percent }) =>
-										`${name} ${(percent * 100).toFixed(0)}%`
+										`${name} ${(percent ?? 0 * 100).toFixed(0)}%`
 									}
 									outerRadius={80}
 									fill="#8884d8"

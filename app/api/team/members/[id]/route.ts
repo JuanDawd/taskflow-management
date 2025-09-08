@@ -31,18 +31,6 @@ export async function GET(request: NextRequest, { params }: Context) {
 			},
 			include: {
 				user: true,
-				projects: {
-					include: {
-						project: {
-							select: {
-								id: true,
-								name: true,
-								description: true,
-								status: true,
-							},
-						},
-					},
-				},
 			},
 		})
 
@@ -55,11 +43,9 @@ export async function GET(request: NextRequest, { params }: Context) {
 
 		// Format response
 		const formattedMember = {
-			id: member.id,
 			...member.user,
+			id: member.id,
 			role: member.role,
-			joinedAt: member.joinedAt,
-			projects: member.projects.map((p) => p.project),
 		}
 
 		return NextResponse.json(formattedMember)
@@ -146,7 +132,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		}
 
 		// Start transaction for atomic updates
-		const result = await db.$transaction(async (tx) => {
+		await db.$transaction(async (tx) => {
 			// Update member role if provided
 			let updatedMember = existingMember
 			if (role && role !== existingMember.role) {
@@ -155,20 +141,10 @@ export async function PUT(request: NextRequest, { params }: Context) {
 						id,
 					},
 					data: {
-						role,
+						role: role === 'VIEWER' ? 'MEMBER' : role,
 					},
 					include: {
 						user: true,
-					},
-				})
-
-				// Create notification for role change
-				await tx.notification.create({
-					data: {
-						type: 'MEMBER_UPDATED',
-						title: 'Rol actualizado',
-						message: `Tu rol ha sido cambiado a ${role}`,
-						userId: updatedMember.userId,
 					},
 				})
 			}
@@ -203,18 +179,6 @@ export async function PUT(request: NextRequest, { params }: Context) {
 							role: 'MEMBER',
 						})),
 					})
-
-					// Create notifications for project assignments
-					if (projectIds.length > 0) {
-						await tx.notification.create({
-							data: {
-								type: 'MEMBER_ADDED',
-								title: 'Asignado a proyectos',
-								message: `Has sido asignado a ${projectIds.length} proyecto(s)`,
-								userId: updatedMember.userId,
-							},
-						})
-					}
 				}
 			}
 
@@ -226,27 +190,12 @@ export async function PUT(request: NextRequest, { params }: Context) {
 			where: { id },
 			include: {
 				user: true,
-				projects: {
-					include: {
-						project: {
-							select: {
-								id: true,
-								name: true,
-								description: true,
-								status: true,
-							},
-						},
-					},
-				},
 			},
 		})
 
 		const formattedMember = {
 			id: memberWithProjects!.id,
-			...memberWithProjects!.user,
 			role: memberWithProjects!.role,
-			joinedAt: memberWithProjects!.joinedAt,
-			projects: memberWithProjects!.projects.map((p) => p.project),
 		}
 
 		return NextResponse.json(formattedMember)
@@ -341,7 +290,7 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 		const activeTasks = await db.task.count({
 			where: {
 				assigneeId: memberToDelete.userId,
-				status: { in: ['TODO', 'IN_PROGRESS', 'REVIEW'] },
+				status: { in: ['TODO', 'IN_PROGRESS', 'IN_REVIEW'] },
 			},
 		})
 
@@ -368,16 +317,6 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 			await tx.teamMember.delete({
 				where: {
 					id,
-				},
-			})
-
-			// Create notification for the removed user
-			await tx.notification.create({
-				data: {
-					type: 'MEMBER_REMOVED',
-					title: 'Removido del equipo',
-					message: 'Has sido removido del equipo',
-					userId: memberToDelete.userId,
 				},
 			})
 

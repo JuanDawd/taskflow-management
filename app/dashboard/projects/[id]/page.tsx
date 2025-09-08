@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Project, Task, User } from '@/types'
+import { Project, Task } from '@/types'
 import KanbanBoard from '@/components/kanban/KanbanBoard'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/use-toast'
@@ -10,6 +10,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
 	ArrowLeft,
 	Settings,
@@ -21,34 +38,61 @@ import {
 	CheckCircle2,
 	AlertCircle,
 	FolderOpen,
+	MoreHorizontal,
+	UserPlus,
+	Edit,
+	Archive,
+	Copy,
+	Share,
+	Download,
+	Activity,
+	BarChart3,
+	MessageSquare,
+	FileText,
 } from 'lucide-react'
-import { format, parseISO, isValid } from 'date-fns'
+import { format, parseISO, isValid, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
 const statusConfig = {
 	ACTIVE: {
-		color: 'bg-green-100 text-green-700',
+		color: 'bg-green-100 text-green-700 border-green-200',
 		label: 'Activo',
 		icon: Target,
 	},
 	COMPLETED: {
-		color: 'bg-blue-100 text-blue-700',
+		color: 'bg-blue-100 text-blue-700 border-blue-200',
 		label: 'Completado',
 		icon: CheckCircle2,
 	},
 	ARCHIVED: {
-		color: 'bg-gray-100 text-gray-700',
+		color: 'bg-gray-100 text-gray-700 border-gray-200',
 		label: 'Archivado',
 		icon: FolderOpen,
+	},
+	ON_HOLD: {
+		color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+		label: 'En espera',
+		icon: Clock,
 	},
 }
 
 const priorityConfig = {
-	LOW: { color: 'bg-gray-500', label: 'Baja' },
-	MEDIUM: { color: 'bg-blue-500', label: 'Media' },
-	HIGH: { color: 'bg-orange-500', label: 'Alta' },
-	URGENT: { color: 'bg-red-500', label: 'Urgente' },
+	LOW: { color: 'bg-gray-500', label: 'Baja', textColor: 'text-gray-600' },
+	MEDIUM: { color: 'bg-blue-500', label: 'Media', textColor: 'text-blue-600' },
+	HIGH: { color: 'bg-orange-500', label: 'Alta', textColor: 'text-orange-600' },
+	URGENT: { color: 'bg-red-500', label: 'Urgente', textColor: 'text-red-600' },
+}
+
+interface ProjectStats {
+	totalTasks: number
+	completedTasks: number
+	pendingTasks: number
+	overdueTasks: number
+	progressPercentage: number
+	recentActivity: number
+	totalComments: number
+	totalFiles: number
 }
 
 export default function ProjectDetailPage() {
@@ -59,29 +103,24 @@ export default function ProjectDetailPage() {
 	// Estados principales
 	const [project, setProject] = useState<Project | null>(null)
 	const [tasks, setTasks] = useState<Task[]>([])
-	const [users, setUsers] = useState<User[]>([])
-	const [projectStats, setProjectStats] = useState({
+	const [projectStats, setProjectStats] = useState<ProjectStats>({
 		totalTasks: 0,
 		completedTasks: 0,
 		pendingTasks: 0,
 		overdueTasks: 0,
 		progressPercentage: 0,
+		recentActivity: 0,
+		totalComments: 0,
+		totalFiles: 0,
 	})
+	const [activeTab, setActiveTab] = useState('kanban')
+	const [showMemberDialog, setShowMemberDialog] = useState(false)
 
 	const { loading, error, execute } = useApi<Project>()
 
-	useEffect(() => {
-		if (params.id) {
-			loadProjectData()
-		}
-	}, [params.id])
+	const loadProjectData = useCallback(async () => {
+		if (!params.id) return
 
-	useEffect(() => {
-		// Calcular estadísticas cuando cambien las tareas
-		calculateProjectStats()
-	}, [tasks])
-
-	const loadProjectData = async () => {
 		try {
 			await execute(async () => {
 				const response = await fetch(`/api/projects/${params.id}`)
@@ -98,13 +137,14 @@ export default function ProjectDetailPage() {
 				const projectData = await response.json()
 				setProject(projectData)
 				setTasks(projectData.tasks || [])
-				setUsers(projectData.members || [])
 				return projectData
 			})
-		} catch (error: any) {
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : 'No se pudo cargar el proyecto'
 			toast({
 				title: 'Error',
-				description: error.message || 'No se pudo cargar el proyecto',
+				description: errorMessage,
 				variant: 'destructive',
 			})
 
@@ -113,155 +153,92 @@ export default function ProjectDetailPage() {
 				router.push('/dashboard/projects')
 			}, 2000)
 		}
-	}
+	}, [execute, params.id, router, toast])
 
-	const calculateProjectStats = () => {
-		const totalTasks = tasks.length
-		const completedTasks = tasks.filter((t) => t.status === 'DONE').length
-		const pendingTasks = tasks.filter((t) => t.status !== 'DONE').length
+	useEffect(() => {
+		loadProjectData()
+	}, [loadProjectData])
 
-		// Tareas vencidas
-		const now = new Date()
-		const overdueTasks = tasks.filter((t) => {
-			if (!t.dueDate || t.status === 'DONE') return false
-			const dueDate = parseISO(t.dueDate)
-			return isValid(dueDate) && dueDate < now
-		}).length
+	useEffect(() => {
+		const calculateProjectStats = () => {
+			const totalTasks = tasks.length
+			const completedTasks = tasks.filter((t) => t.status === 'DONE').length
+			const pendingTasks = tasks.filter((t) => t.status !== 'DONE').length
 
-		const progressPercentage =
-			totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+			// Tareas vencidas
+			const now = new Date()
+			const overdueTasks = tasks.filter((t) => {
+				if (!t.dueDate || t.status === 'DONE') return false
+				const dueDate = parseISO(t.dueDate)
+				return isValid(dueDate) && dueDate < now
+			}).length
 
-		setProjectStats({
-			totalTasks,
-			completedTasks,
-			pendingTasks,
-			overdueTasks,
-			progressPercentage,
-		})
-	}
+			// Actividad reciente (tareas actualizadas en los últimos 7 días)
+			const sevenDaysAgo = new Date()
+			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+			const recentActivity = tasks.filter((t) => {
+				const updatedDate = parseISO(t.updatedAt)
+				return isValid(updatedDate) && updatedDate > sevenDaysAgo
+			}).length
 
-	const handleTaskMove = async (taskId: string, newStatus: string) => {
-		// Optimistic update
-		const oldTasks = [...tasks]
-		setTasks(
-			tasks.map((t) =>
-				t.id === taskId ? { ...t, status: newStatus as any } : t,
-			),
-		)
+			const progressPercentage =
+				totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
-		try {
-			const response = await fetch(`/api/tasks/${taskId}/move`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ status: newStatus }),
-			})
+			// Simular comentarios y archivos (estos vendrían de la API)
+			const totalComments = tasks.reduce(
+				(sum, task) => sum + (task.comments?.length || 0),
+				0,
+			)
+			const totalFiles = tasks.reduce(
+				(sum, task) => sum + (task.attachments?.length || 0),
+				0,
+			)
 
-			if (!response.ok) {
-				throw new Error('Error al mover tarea')
-			}
-
-			const updatedTask = await response.json()
-			setTasks(tasks.map((t) => (t.id === taskId ? updatedTask : t)))
-
-			toast({
-				title: 'Tarea movida',
-				description: `La tarea se movió a ${newStatus}`,
-			})
-		} catch (error: any) {
-			// Revertir cambio optimista
-			setTasks(oldTasks)
-			toast({
-				title: 'Error',
-				description: error.message,
-				variant: 'destructive',
+			setProjectStats({
+				totalTasks,
+				completedTasks,
+				pendingTasks,
+				overdueTasks,
+				progressPercentage,
+				recentActivity,
+				totalComments,
+				totalFiles,
 			})
 		}
-	}
 
-	const handleTaskCreate = async (taskData: Partial<Task>) => {
-		try {
-			const response = await fetch('/api/tasks', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					...taskData,
-					projectId: params.id,
-				}),
-			})
+		calculateProjectStats()
+	}, [tasks])
 
-			if (!response.ok) {
-				const errorData = await response.json()
-				throw new Error(errorData.error || 'Error al crear tarea')
-			}
-
-			const newTask = await response.json()
-			setTasks([...tasks, newTask])
-
-			toast({
-				title: 'Tarea creada',
-				description: 'La nueva tarea se ha creado correctamente',
-			})
-		} catch (error: any) {
-			toast({
-				title: 'Error',
-				description: error.message,
-				variant: 'destructive',
-			})
-		}
-	}
-
-	const handleTaskEdit = async (task: Task) => {
-		try {
-			const response = await fetch(`/api/tasks/${task.id}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(task),
-			})
-
-			if (!response.ok) {
-				const errorData = await response.json()
-				throw new Error(errorData.error || 'Error al actualizar tarea')
-			}
-
-			const updatedTask = await response.json()
-			setTasks(tasks.map((t) => (t.id === task.id ? updatedTask : t)))
-
-			toast({
-				title: 'Tarea actualizada',
-				description: 'Los cambios se han guardado correctamente',
-			})
-		} catch (error: any) {
-			toast({
-				title: 'Error',
-				description: error.message,
-				variant: 'destructive',
-			})
-		}
-	}
-
-	const handleTaskDelete = async (taskId: string) => {
-		try {
-			const response = await fetch(`/api/tasks/${taskId}`, {
-				method: 'DELETE',
-			})
-
-			if (!response.ok) {
-				const errorData = await response.json()
-				throw new Error(errorData.error || 'Error al eliminar tarea')
-			}
-
-			setTasks(tasks.filter((t) => t.id !== taskId))
-
-			toast({
-				title: 'Tarea eliminada',
-				description: 'La tarea se ha eliminado correctamente',
-			})
-		} catch (error: any) {
-			toast({
-				title: 'Error',
-				description: error.message,
-				variant: 'destructive',
-			})
+	const handleProjectAction = async (action: string) => {
+		switch (action) {
+			case 'duplicate':
+				// Implementar duplicación de proyecto
+				toast({
+					title: 'Funcionalidad en desarrollo',
+					description: 'Duplicar proyecto próximamente',
+				})
+				break
+			case 'archive':
+				// Implementar archivado
+				toast({
+					title: 'Funcionalidad en desarrollo',
+					description: 'Archivar proyecto próximamente',
+				})
+				break
+			case 'export':
+				// Implementar exportación
+				toast({
+					title: 'Funcionalidad en desarrollo',
+					description: 'Exportar datos próximamente',
+				})
+				break
+			case 'share':
+				// Implementar compartir
+				toast({
+					title: 'Funcionalidad en desarrollo',
+					description: 'Compartir proyecto próximamente',
+				})
+				break
 		}
 	}
 
@@ -269,7 +246,6 @@ export default function ProjectDetailPage() {
 	if (loading) {
 		return (
 			<div className="space-y-6">
-				{/* Header skeleton */}
 				<div className="flex items-center gap-4 animate-pulse">
 					<div className="h-10 w-10 bg-muted rounded"></div>
 					<div className="flex-1 space-y-2">
@@ -278,8 +254,7 @@ export default function ProjectDetailPage() {
 					</div>
 				</div>
 
-				{/* Stats skeleton */}
-				<div className="grid gap-4 md:grid-cols-4">
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					{[...Array(4)].map((_, i) => (
 						<Card key={i} className="animate-pulse">
 							<CardContent className="p-6">
@@ -292,19 +267,7 @@ export default function ProjectDetailPage() {
 					))}
 				</div>
 
-				{/* Kanban skeleton */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-					{[...Array(4)].map((_, i) => (
-						<Card key={i} className="animate-pulse">
-							<CardContent className="p-6">
-								<div className="space-y-3">
-									<div className="h-4 bg-muted rounded"></div>
-									<div className="h-32 bg-muted rounded"></div>
-								</div>
-							</CardContent>
-						</Card>
-					))}
-				</div>
+				<div className="h-96 bg-muted rounded animate-pulse"></div>
 			</div>
 		)
 	}
@@ -360,11 +323,13 @@ export default function ProjectDetailPage() {
 		isValid(endDate) &&
 		endDate < new Date() &&
 		project.status !== 'COMPLETED'
+	const daysUntilDue =
+		endDate && isValid(endDate) ? differenceInDays(endDate, new Date()) : null
 
 	return (
 		<div className="space-y-6">
 			{/* Project Header */}
-			<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+			<div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
 				<div className="flex items-center gap-4">
 					<Button
 						variant="ghost"
@@ -375,71 +340,131 @@ export default function ProjectDetailPage() {
 						Proyectos
 					</Button>
 
-					<div className="flex items-center gap-3">
-						<div
-							className={cn(
-								'p-2 rounded-lg',
-								priorityInfo.color.replace('bg-', 'bg-').replace('500', '100'),
-							)}
-						>
-							<StatusIcon
-								className={cn(
-									'h-6 w-6',
-									priorityInfo.color.replace('bg-', 'text-'),
-								)}
-							/>
+					<div className="flex items-start gap-4">
+						<div className={cn('p-3 rounded-lg border', statusInfo.color)}>
+							<StatusIcon className="h-6 w-6" />
 						</div>
 
-						<div>
-							<h1 className="text-2xl font-bold">{project.name}</h1>
-							<p className="text-muted-foreground">
+						<div className="space-y-1">
+							<div className="flex items-center gap-2">
+								<h1 className="text-2xl font-bold">{project.name}</h1>
+								<Badge className={statusInfo.color}>{statusInfo.label}</Badge>
+								<Badge
+									variant="outline"
+									className={cn('border-2', priorityInfo.textColor)}
+								>
+									<div
+										className={cn(
+											'w-2 h-2 rounded-full mr-1',
+											priorityInfo.color,
+										)}
+									/>
+									{priorityInfo.label}
+								</Badge>
+							</div>
+							<p className="text-muted-foreground max-w-2xl">
 								{project.description || 'Sin descripción'}
 							</p>
+							{endDate && isValid(endDate) && (
+								<div className="flex items-center gap-2 text-sm">
+									<Calendar className="h-4 w-4" />
+									<span className={cn(isOverdue && 'text-red-600')}>
+										Vence: {format(endDate, 'dd MMM yyyy', { locale: es })}
+										{daysUntilDue !== null && (
+											<span className="ml-1">
+												(
+												{daysUntilDue > 0
+													? `${daysUntilDue} días restantes`
+													: `${Math.abs(daysUntilDue)} días vencido`}
+												)
+											</span>
+										)}
+									</span>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-3">
-					{/* Project Status */}
-					<Badge className={statusInfo.color}>{statusInfo.label}</Badge>
+				<div className="flex items-center gap-2">
+					<Dialog open={showMemberDialog} onOpenChange={setShowMemberDialog}>
+						<DialogTrigger asChild>
+							<Button variant="outline" size="sm">
+								<UserPlus className="h-4 w-4 mr-2" />
+								Invitar
+							</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Invitar miembros al proyecto</DialogTitle>
+								<DialogDescription>
+									Agrega nuevos miembros a tu equipo de proyecto.
+								</DialogDescription>
+							</DialogHeader>
+							{/* Aquí iría el formulario de invitación */}
+							<p className="text-center py-4 text-muted-foreground">
+								Formulario de invitación próximamente
+							</p>
+						</DialogContent>
+					</Dialog>
 
-					{/* Project Priority */}
-					<Badge
-						variant="outline"
-						className={priorityInfo.color.replace('bg-', 'border-')}
-					>
-						{priorityInfo.label}
-					</Badge>
-
-					{/* Settings Button */}
 					<Button variant="outline" size="sm">
-						<Settings className="h-4 w-4 mr-2" />
-						Configurar
+						<Edit className="h-4 w-4 mr-2" />
+						Editar
 					</Button>
+
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" size="sm">
+								<MoreHorizontal className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={() => handleProjectAction('duplicate')}
+							>
+								<Copy className="h-4 w-4 mr-2" />
+								Duplicar proyecto
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => handleProjectAction('share')}>
+								<Share className="h-4 w-4 mr-2" />
+								Compartir
+							</DropdownMenuItem>
+							<DropdownMenuItem onClick={() => handleProjectAction('export')}>
+								<Download className="h-4 w-4 mr-2" />
+								Exportar datos
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem onClick={() => handleProjectAction('archive')}>
+								<Archive className="h-4 w-4 mr-2" />
+								Archivar proyecto
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
 			</div>
 
-			{/* Project Info Cards */}
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			{/* Enhanced Stats Grid */}
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
 				{/* Progress */}
-				<Card>
+				<Card className="lg:col-span-2">
 					<CardHeader className="pb-2">
 						<div className="flex items-center justify-between">
-							<CardTitle className="text-sm font-medium">Progreso</CardTitle>
+							<CardTitle className="text-sm font-medium">
+								Progreso del Proyecto
+							</CardTitle>
 							<TrendingUp className="h-4 w-4 text-muted-foreground" />
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
+						<div className="text-3xl font-bold mb-2">
 							{projectStats.progressPercentage}%
 						</div>
-						<div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-							<div
-								className="bg-primary h-2 rounded-full transition-all duration-500"
-								style={{ width: `${projectStats.progressPercentage}%` }}
-							></div>
-						</div>
-						<p className="text-xs text-muted-foreground mt-1">
+						<Progress
+							value={projectStats.progressPercentage}
+							className="mb-2"
+						/>
+						<p className="text-xs text-muted-foreground">
 							{projectStats.completedTasks} de {projectStats.totalTasks} tareas
 							completadas
 						</p>
@@ -455,19 +480,22 @@ export default function ProjectDetailPage() {
 						</div>
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
+						<div className="text-2xl font-bold mb-2">
 							{project.members?.length || 0}
 						</div>
-						<div className="flex -space-x-2 mt-2">
+						<div className="flex -space-x-2">
 							{project.members?.slice(0, 4).map((member) => (
 								<Avatar
 									key={member.id}
 									className="h-6 w-6 border-2 border-background"
 								>
-									<AvatarImage src={member.avatar} />
-									<AvatarFallback className="text-xs">
-										{member.name?.charAt(0).toUpperCase()}
-									</AvatarFallback>
+									{member.avatar ? (
+										<AvatarImage src={member.avatar} />
+									) : (
+										<AvatarFallback className="text-xs">
+											{member.name?.charAt(0).toUpperCase()}
+										</AvatarFallback>
+									)}
 								</Avatar>
 							))}
 							{(project.members?.length || 0) > 4 && (
@@ -484,72 +512,133 @@ export default function ProjectDetailPage() {
 					<CardHeader className="pb-2">
 						<div className="flex items-center justify-between">
 							<CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-							<Clock className="h-4 w-4 text-muted-foreground" />
+							<Clock className="h-4 w-4 text-orange-500" />
 						</div>
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
 							{projectStats.pendingTasks}
 						</div>
-						<p className="text-xs text-muted-foreground">
-							tareas por completar
-						</p>
+						<p className="text-xs text-muted-foreground">tareas activas</p>
+						{projectStats.overdueTasks > 0 && (
+							<Badge variant="destructive" className="mt-1 text-xs">
+								{projectStats.overdueTasks} vencidas
+							</Badge>
+						)}
 					</CardContent>
 				</Card>
 
-				{/* Due Date */}
+				{/* Recent Activity */}
 				<Card>
 					<CardHeader className="pb-2">
 						<div className="flex items-center justify-between">
-							<CardTitle className="text-sm font-medium">
-								Fecha límite
-							</CardTitle>
-							<Calendar className="h-4 w-4 text-muted-foreground" />
+							<CardTitle className="text-sm font-medium">Actividad</CardTitle>
+							<Activity className="h-4 w-4 text-muted-foreground" />
 						</div>
 					</CardHeader>
 					<CardContent>
-						{endDate && isValid(endDate) ? (
-							<>
-								<div
-									className={cn(
-										'text-2xl font-bold',
-										isOverdue ? 'text-red-600' : 'text-foreground',
-									)}
-								>
-									{format(endDate, 'dd MMM', { locale: es })}
-								</div>
-								<p
-									className={cn(
-										'text-xs',
-										isOverdue ? 'text-red-600' : 'text-muted-foreground',
-									)}
-								>
-									{isOverdue
-										? 'Vencido'
-										: format(endDate, 'yyyy', { locale: es })}
-								</p>
-								{projectStats.overdueTasks > 0 && (
-									<Badge variant="destructive" className="mt-1 text-xs">
-										{projectStats.overdueTasks} vencidas
-									</Badge>
-								)}
-							</>
-						) : (
-							<>
-								<div className="text-2xl font-bold text-muted-foreground">
-									--
-								</div>
-								<p className="text-xs text-muted-foreground">
-									Sin fecha límite
-								</p>
-							</>
-						)}
+						<div className="text-2xl font-bold">
+							{projectStats.recentActivity}
+						</div>
+						<p className="text-xs text-muted-foreground">últimos 7 días</p>
+					</CardContent>
+				</Card>
+
+				{/* Comments & Files */}
+				<Card>
+					<CardHeader className="pb-2">
+						<div className="flex items-center justify-between">
+							<CardTitle className="text-sm font-medium">Recursos</CardTitle>
+							<FileText className="h-4 w-4 text-muted-foreground" />
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-1">
+							<div className="flex justify-between text-sm">
+								<span className="flex items-center gap-1">
+									<MessageSquare className="h-3 w-3" />
+									Comentarios
+								</span>
+								<span className="font-medium">
+									{projectStats.totalComments}
+								</span>
+							</div>
+							<div className="flex justify-between text-sm">
+								<span className="flex items-center gap-1">
+									<FileText className="h-3 w-3" />
+									Archivos
+								</span>
+								<span className="font-medium">{projectStats.totalFiles}</span>
+							</div>
+						</div>
 					</CardContent>
 				</Card>
 			</div>
 
-			{/* Kanban Board */}
-			<KanbanBoard projectId={project.id} />
+			{/* Project Content Tabs */}
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+				<TabsList className="grid w-full grid-cols-4">
+					<TabsTrigger value="kanban" className="flex items-center gap-2">
+						<Target className="h-4 w-4" />
+						Kanban
+					</TabsTrigger>
+					<TabsTrigger value="analytics" className="flex items-center gap-2">
+						<BarChart3 className="h-4 w-4" />
+						Analíticas
+					</TabsTrigger>
+					<TabsTrigger value="activity" className="flex items-center gap-2">
+						<Activity className="h-4 w-4" />
+						Actividad
+					</TabsTrigger>
+					<TabsTrigger value="settings" className="flex items-center gap-2">
+						<Settings className="h-4 w-4" />
+						Configuración
+					</TabsTrigger>
+				</TabsList>
+
+				<TabsContent value="kanban" className="space-y-4">
+					<KanbanBoard projectId={project.id} />
+				</TabsContent>
+
+				<TabsContent value="analytics" className="space-y-4">
+					<Card>
+						<CardHeader>
+							<CardTitle>Analíticas del Proyecto</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p className="text-center py-8 text-muted-foreground">
+								Dashboard de analíticas próximamente
+							</p>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="activity" className="space-y-4">
+					<Card>
+						<CardHeader>
+							<CardTitle>Actividad Reciente</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p className="text-center py-8 text-muted-foreground">
+								Feed de actividad próximamente
+							</p>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="settings" className="space-y-4">
+					<Card>
+						<CardHeader>
+							<CardTitle>Configuración del Proyecto</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<p className="text-center py-8 text-muted-foreground">
+								Configuración de proyecto próximamente
+							</p>
+						</CardContent>
+					</Card>
+				</TabsContent>
+			</Tabs>
 		</div>
 	)
 }

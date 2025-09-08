@@ -1,16 +1,30 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
+import { signIn } from 'next-auth/react'
+
 
 export default withAuth(
 	function middleware(req) {
 		const token = req.nextauth.token
 		const isAuth = !!token
-		const isAuthPage = req.nextUrl.pathname.startsWith('/auth')
+		const isAuthPage =
+			req.nextUrl.pathname.startsWith('/login') ||
+			req.nextUrl.pathname.startsWith('/register') // Update this line
 		const isApiRoute = req.nextUrl.pathname.startsWith('/api')
+		const isRootPath = req.nextUrl.pathname === '/'
+
+		// Handle root path - redirect to appropriate page based on auth status
+		if (isRootPath) {
+			if (isAuth) {
+				return NextResponse.redirect(new URL('/dashboard', req.url))
+			} else {
+				return NextResponse.next() // Allow access to home page for unauthenticated users
+			}
+		}
 
 		// Redirect to login if not authenticated and trying to access protected routes
 		if (!isAuth && !isAuthPage && !isApiRoute) {
-			return NextResponse.redirect(new URL('/auth/signin', req.url))
+			return NextResponse.redirect(new URL('/login', req.url)) // Update this line
 		}
 
 		// Redirect to dashboard if authenticated and trying to access auth pages
@@ -27,7 +41,7 @@ export default withAuth(
 			)
 
 			if (!isPublicRoute && !isAuth) {
-				return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+				return NextResponse.next()
 			}
 		}
 
@@ -36,8 +50,13 @@ export default withAuth(
 	{
 		callbacks: {
 			authorized: ({ token, req }) => {
-				// Allow access to auth pages without token
-				if (req.nextUrl.pathname.startsWith('/auth')) {
+				// Allow access to auth pages and root path without token
+				if (
+					req.nextUrl.pathname.startsWith('/login') ||
+					req.nextUrl.pathname.startsWith('/register') ||
+					req.nextUrl.pathname === '/'
+				) {
+					// Update this condition
 					return true
 				}
 				// Require token for all other pages
@@ -48,14 +67,5 @@ export default withAuth(
 )
 
 export const config = {
-	matcher: [
-		/*
-		 * Match all request paths except for the ones starting with:
-		 * - _next/static (static files)
-		 * - _next/image (image optimization files)
-		 * - favicon.ico (favicon file)
-		 * - public folder
-		 */
-		'/((?!_next/static|_next/image|favicon.ico|public).*)',
-	],
+	matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
 }

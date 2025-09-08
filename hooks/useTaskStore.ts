@@ -1,38 +1,7 @@
 'use client'
 
+import { Task } from '@prisma/client'
 import { create } from 'zustand'
-
-interface Task {
-	id: string
-	title: string
-	description?: string
-	status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
-	priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
-	assigneeId?: string
-	projectId: string
-	dueDate?: Date
-	estimatedHours?: number
-	actualHours?: number
-	tags: string[]
-	attachments: Array<{
-		name: string
-		url: string
-		size: number
-		type: string
-	}>
-	createdAt: Date
-	updatedAt: Date
-	assignee?: {
-		id: string
-		name: string
-		email: string
-		avatar?: string
-	}
-	project?: {
-		id: string
-		name: string
-	}
-}
 
 interface TaskStore {
 	tasks: Task[]
@@ -54,7 +23,7 @@ export const useTaskStore = create<TaskStore>((set) => ({
 	isLoading: false,
 	error: null,
 
-	fetchTasks: async (projectId: string) => {
+	fetchTasks: async (projectId?: string) => {
 		set({ isLoading: true, error: null })
 		try {
 			const url = projectId ? `/api/tasks?projectId=${projectId}` : '/api/tasks'

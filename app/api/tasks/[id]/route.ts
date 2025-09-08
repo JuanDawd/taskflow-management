@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { taskSchema } from '@/lib/validation'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
+import { JWTPayload } from '@/types'
 
 interface Context {
 	params: Promise<{ id: string }>
@@ -41,24 +42,12 @@ export async function GET(request: NextRequest, { params }: Context) {
 				comments: {
 					include: {
 						user: true,
-						replies: {
-							include: {
-								user: true,
-							},
-						},
-					},
-					where: {
-						parentId: null,
 					},
 					orderBy: {
 						createdAt: 'desc',
 					},
 				},
-				attachments: {
-					include: {
-						uploadedBy: true,
-					},
-				},
+				attachments: {},
 				_count: {
 					select: {
 						comments: true,
@@ -167,7 +156,7 @@ export async function PATCH(request: NextRequest, { params }: Context) {
 		const decoded = jwt.verify(
 			token,
 			process.env.JWT_SECRET || 'fallback-secret',
-		) as any
+		) as JWTPayload
 		const userId = decoded.userId
 		const userRole = decoded.role
 

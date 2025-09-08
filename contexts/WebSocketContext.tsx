@@ -3,12 +3,12 @@
 import { createContext, useContext } from 'react'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useTaskStore } from '@/hooks/useTaskStore'
-import { useNotificationStore } from '@/hooks/useNotificationStore'
+// import { useNotificationStore } from '@/hooks/useNotificationStore'
 
 interface WebSocketContextType {
 	isConnected: boolean
 	connectionError: string | null
-	sendMessage: (message: any) => void
+	sendMessage: (message: string) => void
 	reconnect: () => void
 }
 
@@ -16,7 +16,12 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null)
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 	const { fetchTasks } = useTaskStore()
-	const { addNotification } = useNotificationStore()
+	// const { addNotification } = useNotificationStore()
+
+	// Temporarily disable notifications to avoid errors
+	const addNotification = (notification: unknown) => {
+		console.log('New notification:', notification)
+	}
 
 	const { isConnected, connectionError, sendMessage, reconnect } = useWebSocket(
 		{

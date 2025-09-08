@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { CalendarIcon, Upload, X, Plus, User } from 'lucide-react'
+import { CalendarIcon,  User } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -16,12 +15,10 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from '@/components/ui/dialog'
 import {
 	Form,
 	FormControl,
-	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -42,41 +39,18 @@ import {
 	PopoverTrigger,
 } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
-
-const taskFormSchema = z.object({
-	title: z.string().min(1, 'El título es requerido').max(100),
-	description: z.string().optional(),
-	status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']),
-	priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
-	assigneeId: z.string().optional(),
-	projectId: z.string().min(1, 'El proyecto es requerido'),
-	dueDate: z.date().optional(),
-	estimatedHours: z.number().min(0).optional(),
-	tags: z.array(z.string()).default([]),
-	attachments: z
-		.array(
-			z.object({
-				name: z.string(),
-				url: z.string(),
-				size: z.number(),
-				type: z.string(),
-			}),
-		)
-		.default([]),
-})
-
-type TaskFormValues = z.infer<typeof taskFormSchema>
+import { taskSchema, TaskType } from '@/lib/validation'
+import { Task } from '@prisma/client'
 
 interface TaskFormProps {
-	task?: any
+	task?: Task
 	projectId?: string
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	onSubmit: (data: TaskFormValues) => Promise<void>
+	onSubmit: (data: TaskType) => Promise<void>
 }
 
 interface User {
@@ -101,21 +75,16 @@ export function TaskForm({
 	const [isLoading, setIsLoading] = useState(false)
 	const [users, setUsers] = useState<User[]>([])
 	const [projects, setProjects] = useState<Project[]>([])
-	const [tags, setTags] = useState<string[]>([])
-	const [newTag, setNewTag] = useState('')
-	const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
 	const { toast } = useToast()
 
-	const form = useForm<TaskFormValues>({
-		resolver: zodResolver(taskFormSchema),
+	const form = useForm<TaskType>({
+		resolver: zodResolver(taskSchema),
 		defaultValues: {
 			title: '',
 			description: '',
 			status: 'TODO',
 			priority: 'MEDIUM',
 			projectId: projectId || '',
-			tags: [],
-			attachments: [],
 		},
 	})
 
@@ -129,11 +98,7 @@ export function TaskForm({
 				assigneeId: task.assigneeId || '',
 				projectId: task.projectId,
 				dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-				estimatedHours: task.estimatedHours || undefined,
-				tags: task.tags || [],
-				attachments: task.attachments || [],
 			})
-			setTags(task.tags || [])
 		}
 	}, [task, form])
 
@@ -168,97 +133,11 @@ export function TaskForm({
 		}
 	}
 
-	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const files = Array.from(event.target.files || [])
-		const maxSize = 10 * 1024 * 1024 // 10MB
-		const allowedTypes = [
-			'image/',
-			'application/pdf',
-			'text/',
-			'application/vnd.ms-excel',
-			'application/vnd.openxmlformats-officedocument',
-		]
-
-		const validFiles = files.filter((file) => {
-			if (file.size > maxSize) {
-				toast({
-					title: 'Archivo muy grande',
-					description: `${file.name} excede el límite de 10MB`,
-					variant: 'destructive',
-				})
-				return false
-			}
-
-			const isAllowed = allowedTypes.some((type) => file.type.startsWith(type))
-			if (!isAllowed) {
-				toast({
-					title: 'Tipo de archivo no permitido',
-					description: `${file.name} no es un tipo de archivo permitido`,
-					variant: 'destructive',
-				})
-				return false
-			}
-
-			return true
-		})
-
-		setUploadedFiles((prev) => [...prev, ...validFiles])
-	}
-
-	const removeFile = (index: number) => {
-		setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
-	}
-
-	const addTag = () => {
-		if (newTag.trim() && !tags.includes(newTag.trim())) {
-			const updatedTags = [...tags, newTag.trim()]
-			setTags(updatedTags)
-			form.setValue('tags', updatedTags)
-			setNewTag('')
-		}
-	}
-
-	const removeTag = (tagToRemove: string) => {
-		const updatedTags = tags.filter((tag) => tag !== tagToRemove)
-		setTags(updatedTags)
-		form.setValue('tags', updatedTags)
-	}
-
-	const handleSubmit = async (data: TaskFormValues) => {
+	const handleSubmit = async (data: TaskType) => {
 		try {
 			setIsLoading(true)
 
-			// Upload files first if any
-			const attachments = []
-			if (uploadedFiles.length > 0) {
-				for (const file of uploadedFiles) {
-					const formData = new FormData()
-					formData.append('file', file)
-
-					const uploadResponse = await fetch('/api/upload', {
-						method: 'POST',
-						body: formData,
-					})
-
-					if (uploadResponse.ok) {
-						const uploadResult = await uploadResponse.json()
-						attachments.push({
-							name: file.name,
-							url: uploadResult.url,
-							size: file.size,
-							type: file.type,
-						})
-					}
-				}
-			}
-
-			const taskData = {
-				...data,
-				tags,
-				attachments: [...(data.attachments || []), ...attachments],
-			}
-
-			await onSubmit(taskData)
+			await onSubmit(data)
 
 			toast({
 				title: task ? 'Tarea actualizada' : 'Tarea creada',
@@ -269,8 +148,8 @@ export function TaskForm({
 
 			onOpenChange(false)
 			form.reset()
-			setTags([])
-			setUploadedFiles([])
+
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			toast({
 				title: 'Error',
@@ -280,13 +159,6 @@ export function TaskForm({
 		} finally {
 			setIsLoading(false)
 		}
-	}
-
-	const priorityColors = {
-		LOW: 'bg-blue-100 text-blue-800',
-		MEDIUM: 'bg-yellow-100 text-yellow-800',
-		HIGH: 'bg-orange-100 text-orange-800',
-		URGENT: 'bg-red-100 text-red-800',
 	}
 
 	const statusLabels = {
@@ -530,10 +402,16 @@ export function TaskForm({
 											<PopoverContent className="w-auto p-0" align="start">
 												<Calendar
 													mode="single"
-													selected={field.value}
+													selected={
+														field.value instanceof Date
+															? field.value
+															: field.value
+															? new Date(field.value)
+															: undefined
+													}
 													onSelect={field.onChange}
 													disabled={(date) => date < new Date()}
-													initialFocus
+													autoFocus
 												/>
 											</PopoverContent>
 										</Popover>
@@ -541,155 +419,6 @@ export function TaskForm({
 									</FormItem>
 								)}
 							/>
-
-							<FormField
-								control={form.control}
-								name="estimatedHours"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Horas estimadas</FormLabel>
-										<FormControl>
-											<Input
-												type="number"
-												placeholder="0"
-												min="0"
-												step="0.5"
-												{...field}
-												onChange={(e) =>
-													field.onChange(
-														e.target.value
-															? parseFloat(e.target.value)
-															: undefined,
-													)
-												}
-											/>
-										</FormControl>
-										<FormDescription>Tiempo estimado en horas</FormDescription>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-						</div>
-
-						{/* Tags */}
-						<div className="space-y-2">
-							<FormLabel>Etiquetas</FormLabel>
-							<div className="flex flex-wrap gap-2 mb-2">
-								{tags.map((tag) => (
-									<Badge key={tag} variant="secondary" className="gap-1">
-										{tag}
-										<button
-											type="button"
-											onClick={() => removeTag(tag)}
-											className="ml-1 hover:bg-red-100 rounded-full p-0.5"
-										>
-											<X className="h-3 w-3" />
-										</button>
-									</Badge>
-								))}
-							</div>
-							<div className="flex gap-2">
-								<Input
-									placeholder="Nueva etiqueta"
-									value={newTag}
-									onChange={(e) => setNewTag(e.target.value)}
-									onKeyPress={(e) => {
-										if (e.key === 'Enter') {
-											e.preventDefault()
-											addTag()
-										}
-									}}
-								/>
-								<Button type="button" onClick={addTag} size="sm">
-									<Plus className="h-4 w-4" />
-								</Button>
-							</div>
-						</div>
-
-						{/* File Attachments */}
-						<div className="space-y-2">
-							<FormLabel>Archivos adjuntos</FormLabel>
-							<div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-								<input
-									type="file"
-									multiple
-									accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx"
-									onChange={handleFileUpload}
-									className="hidden"
-									id="file-upload"
-								/>
-								<label
-									htmlFor="file-upload"
-									className="flex flex-col items-center gap-2 cursor-pointer"
-								>
-									<Upload className="h-8 w-8 text-gray-400" />
-									<span className="text-sm text-gray-600">
-										Haz clic para subir archivos o arrastra aquí
-									</span>
-									<span className="text-xs text-gray-400">
-										Máximo 10MB por archivo. Formatos: imágenes, PDF, documentos
-									</span>
-								</label>
-							</div>
-
-							{/* Uploaded Files List */}
-							{uploadedFiles.length > 0 && (
-								<div className="space-y-2">
-									{uploadedFiles.map((file, index) => (
-										<div
-											key={index}
-											className="flex items-center justify-between p-2 bg-gray-50 rounded"
-										>
-											<div className="flex items-center gap-2">
-												<div className="text-sm font-medium">{file.name}</div>
-												<div className="text-xs text-gray-500">
-													{(file.size / 1024 / 1024).toFixed(2)} MB
-												</div>
-											</div>
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={() => removeFile(index)}
-											>
-												<X className="h-4 w-4" />
-											</Button>
-										</div>
-									))}
-								</div>
-							)}
-
-							{/* Existing Attachments (for editing) */}
-							{task?.attachments?.length > 0 && (
-								<div className="space-y-2">
-									<div className="text-sm font-medium">
-										Archivos existentes:
-									</div>
-									{task.attachments.map((attachment: any, index: number) => (
-										<div
-											key={index}
-											className="flex items-center justify-between p-2 bg-gray-50 rounded"
-										>
-											<div className="flex items-center gap-2">
-												<div className="text-sm font-medium">
-													{attachment.name}
-												</div>
-												<div className="text-xs text-gray-500">
-													{(attachment.size / 1024 / 1024).toFixed(2)} MB
-												</div>
-											</div>
-											<a
-												href={attachment.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="text-blue-600 hover:text-blue-800 text-sm"
-											>
-												Ver
-											</a>
-										</div>
-									))}
-								</div>
-							)}
 						</div>
 
 						<DialogFooter>

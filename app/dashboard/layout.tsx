@@ -36,23 +36,23 @@ export default function DashboardLayout({
 	const pathname = usePathname()
 
 	useEffect(() => {
-		fetchUser()
-	}, [])
-
-	const fetchUser = async () => {
-		try {
-			const response = await fetch('/api/auth/me')
-			if (response.ok) {
-				const data = await response.json()
-				setUser(data.user)
-			} else {
+		const fetchUser = async () => {
+			try {
+				const response = await fetch('/api/auth/me')
+				if (response.ok) {
+					const data = await response.json()
+					setUser(data.user)
+				} else {
+					router.push('/login')
+				}
+			} catch (error) {
+				console.error('Error fetching user:', error)
 				router.push('/login')
 			}
-		} catch (error) {
-			console.error('Error fetching user:', error)
-			router.push('/login')
 		}
-	}
+
+		fetchUser()
+	}, [router])
 
 	const handleLogout = async () => {
 		try {

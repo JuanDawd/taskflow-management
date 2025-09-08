@@ -14,19 +14,10 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '@/components/ui/dialog'
-import {
 	MoreHorizontal,
 	Calendar,
 	MessageCircle,
 	Paperclip,
-	User as UserIcon,
 	Clock,
 	Flag,
 	Edit,
@@ -57,13 +48,6 @@ const priorityConfig = {
 	MEDIUM: { color: 'bg-blue-500', label: 'Media' },
 	HIGH: { color: 'bg-orange-500', label: 'Alta' },
 	URGENT: { color: 'bg-red-500', label: 'Urgente' },
-}
-
-const statusConfig = {
-	TODO: { color: 'bg-gray-100 text-gray-700', label: 'Por hacer' },
-	IN_PROGRESS: { color: 'bg-blue-100 text-blue-700', label: 'En progreso' },
-	REVIEW: { color: 'bg-yellow-100 text-yellow-700', label: 'Revisión' },
-	DONE: { color: 'bg-green-100 text-green-700', label: 'Completado' },
 }
 
 export function TaskCard({
@@ -207,7 +191,7 @@ export function TaskCard({
 							{(task._count?.comments || 0) > 0 && (
 								<div className="flex items-center gap-1 text-xs text-muted-foreground">
 									<MessageCircle className="h-3 w-3" />
-									<span>{task._count.comments}</span>
+									<span>{task._count?.comments}</span>
 								</div>
 							)}
 
@@ -215,20 +199,23 @@ export function TaskCard({
 							{(task._count?.attachments || 0) > 0 && (
 								<div className="flex items-center gap-1 text-xs text-muted-foreground">
 									<Paperclip className="h-3 w-3" />
-									<span>{task._count.attachments}</span>
+									<span>{task._count?.attachments}</span>
 								</div>
 							)}
 
 							{/* Assignee avatar */}
 							{task.assignee && (
 								<Avatar className="h-6 w-6">
-									<AvatarImage src={task.assignee.avatar} />
-									<AvatarFallback className="text-xs">
-										{task.assignee.name
-											?.split(' ')
-											.map((n) => n[0])
-											.join('')}
-									</AvatarFallback>
+									{task.assignee.avatar ? (
+										<AvatarImage src={task.assignee.avatar} />
+									) : (
+										<AvatarFallback className="text-xs">
+											{task.assignee.name
+												?.split(' ')
+												.map((n) => n[0])
+												.join('')}
+										</AvatarFallback>
+									)}
 								</Avatar>
 							)}
 						</div>

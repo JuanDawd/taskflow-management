@@ -52,7 +52,7 @@ import {
 	Crown,
 	Eye,
 } from 'lucide-react'
-import { memberInviteSchema } from '@/lib/validation'
+import { MemberInvite, memberInviteSchema } from '@/lib/validation'
 import { z } from 'zod'
 
 interface TeamMember extends User {
@@ -64,8 +64,7 @@ interface TeamMember extends User {
 interface MemberManagementProps {
 	members: TeamMember[]
 	projects: Project[]
-	onInviteMember: (data: any) => Promise<void>
-	onUpdateMember: (memberId: string, data: any) => Promise<void>
+	onInviteMember: (data: MemberInvite) => Promise<void>
 	onRemoveMember: (memberId: string) => Promise<void>
 	currentUserRole: 'ADMIN' | 'MEMBER' | 'VIEWER'
 }
@@ -80,7 +79,6 @@ export function MemberManagement({
 	members,
 	projects,
 	onInviteMember,
-	onUpdateMember,
 	onRemoveMember,
 	currentUserRole,
 }: MemberManagementProps) {
@@ -88,7 +86,7 @@ export function MemberManagement({
 	const [showInviteDialog, setShowInviteDialog] = useState(false)
 	const [inviteData, setInviteData] = useState({
 		email: '',
-		role: 'MEMBER' as const,
+		role: 'MEMBER' as TeamMember['role'],
 		projectIds: [] as string[],
 	})
 	const [inviteErrors, setInviteErrors] = useState<Record<string, string>>({})
@@ -118,7 +116,7 @@ export function MemberManagement({
 		} catch (error) {
 			if (error instanceof z.ZodError) {
 				const fieldErrors: Record<string, string> = {}
-				error.errors.forEach((err) => {
+				error.issues.forEach((err) => {
 					if (err.path[0]) {
 						fieldErrors[err.path[0] as string] = err.message
 					}
@@ -183,7 +181,7 @@ export function MemberManagement({
 									<Label>Rol</Label>
 									<Select
 										value={inviteData.role}
-										onValueChange={(value: any) =>
+										onValueChange={(value: TeamMember['role']) =>
 											setInviteData({ ...inviteData, role: value })
 										}
 									>
@@ -299,13 +297,16 @@ export function MemberManagement({
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
 										<Avatar className="h-10 w-10">
-											<AvatarImage src={member.avatar} />
-											<AvatarFallback>
-												{member.name
-													?.split(' ')
-													.map((n) => n[0])
-													.join('')}
-											</AvatarFallback>
+											{member.avatar ? (
+												<AvatarImage src={member.avatar} />
+											) : (
+												<AvatarFallback>
+													{member.name
+														?.split(' ')
+														.map((n) => n[0])
+														.join('')}
+												</AvatarFallback>
+											)}
 										</Avatar>
 										<div>
 											<h3 className="font-medium leading-none">

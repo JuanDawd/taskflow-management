@@ -2,6 +2,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { COLORS } from '@/lib/utils'
+
+interface DashboardMetrics {
+	totalTasks: number
+	completedTasks: number
+	overdueTasks: number
+	activeProjects: number
+	teamMembers: number
+	avgCompletionTime: number
+	productivityScore: number
+	tasksByStatus: Array<{ name: string; value: number; color: string }>
+	tasksByPriority: Array<{ name: string; value: number; color: string }>
+	weeklyProgress: Array<{ date: string; created: number; completed: number }>
+	topPerformers: Array<{
+		id: string
+		name: string
+		avatar: string | null
+		completedTasks: number
+		score: number
+	}>
+	projectProgress: Array<{
+		name: string
+		completed: number
+		total: number
+		percentage: number
+	}>
+}
 
 export async function GET(request: NextRequest) {
 	try {
@@ -98,7 +125,7 @@ export async function GET(request: NextRequest) {
 			},
 			{
 				name: 'En revisión',
-				value: tasks.filter((t) => t.status === 'REVIEW').length,
+				value: tasks.filter((t) => t.status === 'IN_REVIEW').length,
 				color: COLORS.REVIEW,
 			},
 			{

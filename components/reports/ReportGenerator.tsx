@@ -9,7 +9,6 @@ import {
 	CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
 	Select,
@@ -18,7 +17,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
-import { DatePickerWithRange } from '@/components/ui/date-range-picker'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Download, FileText, BarChart3, Calendar } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
@@ -55,8 +53,7 @@ export function ReportGenerator() {
 		includeAttachments: false,
 	})
 	const [isGenerating, setIsGenerating] = useState(false)
-	const [projects, setProjects] = useState([])
-	const [users, setUsers] = useState([])
+
 	const { toast } = useToast()
 
 	const reportTypes = [
@@ -153,7 +150,7 @@ export function ReportGenerator() {
 						<Label>Tipo de Reporte</Label>
 						<Select
 							value={config.type}
-							onValueChange={(value: any) =>
+							onValueChange={(value: ReportConfig['type']) =>
 								setConfig({ ...config, type: value })
 							}
 						>
@@ -173,21 +170,12 @@ export function ReportGenerator() {
 						</Select>
 					</div>
 
-					{/* Date Range */}
-					<div className="space-y-2">
-						<Label>Rango de Fechas</Label>
-						<DatePickerWithRange
-							date={config.dateRange}
-							onDateChange={(dateRange) => setConfig({ ...config, dateRange })}
-						/>
-					</div>
-
 					{/* Format */}
 					<div className="space-y-2">
 						<Label>Formato</Label>
 						<Select
 							value={config.format}
-							onValueChange={(value: any) =>
+							onValueChange={(value: ReportConfig['format']) =>
 								setConfig({ ...config, format: value })
 							}
 						>

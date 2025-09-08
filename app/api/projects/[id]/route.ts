@@ -8,7 +8,7 @@ import { z } from 'zod'
 interface Context {
 	params: Promise<{ id: string }> // Ahora es Promise
 }
-export async function GET(request: NextRequest, { params }: Context) {
+export async function GET({ params }: Context) {
 	try {
 		const { id } = await params
 		const session = await getServerSession(authOptions)

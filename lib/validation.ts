@@ -22,6 +22,8 @@ export const projectSchema = z.object({
 	memberIds: z.array(z.string().cuid()).optional(),
 })
 
+export type Project = z.infer<typeof projectSchema>
+
 export const taskSchema = z.object({
 	title: z
 		.string()
@@ -30,12 +32,18 @@ export const taskSchema = z.object({
 	description: z.string().max(1000, 'Descripción muy larga').optional(),
 	status: z
 		.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'])
-		.default('BACKLOG'),
-	priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
-	projectId: z.string().cuid('ID de proyecto inválido'),
-	assigneeId: z.string().cuid('ID de asignado inválido').optional(),
-	dueDate: z.string().datetime().optional().or(z.date().optional()),
+		.default('BACKLOG')
+		.optional(),
+	priority: z
+		.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+		.default('MEDIUM')
+		.optional(),
+	projectId: z.cuid('ID de proyecto inválido'),
+	assigneeId: z.cuid('ID de asignado inválido').optional(),
+	dueDate: z.iso.datetime().optional().or(z.date().optional()),
 })
+
+export type TaskType = z.infer<typeof taskSchema>
 
 export const userSchema = z.object({
 	name: z
@@ -61,7 +69,7 @@ export const userProfileSchema = z.object({
 		.min(1, 'El nombre es requerido')
 		.max(100, 'Máximo 100 caracteres'),
 	email: z.email('Email inválido'),
-	avatar: z.string().url('URL inválida').optional(),
+	avatar: z.url('URL inválida').optional(),
 	bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
 	timezone: z.string().optional(),
 	notifications: z
@@ -80,6 +88,7 @@ export const userProfileSchema = z.object({
 			comments: true,
 		}),
 })
+export type UserProfile = z.infer<typeof userProfileSchema>
 
 export const companySchema = z.object({
 	name: z
@@ -94,14 +103,18 @@ export const companySchema = z.object({
 			/^[a-z0-9-]+$/,
 			'El slug solo puede contener letras minúsculas, números y guiones',
 		),
-	logo: z.string().url('URL de logo inválida').optional(),
+	logo: z.url('URL de logo inválida').optional(),
 })
 
+export type CompanyType = z.infer<typeof companySchema>
+
 export const memberInviteSchema = z.object({
-	email: z.string().email('Email inválido'),
+	email: z.email('Email inválido'),
 	role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
 	projectIds: z.array(z.string()).default([]),
 })
+
+export type MemberInvite = z.infer<typeof memberInviteSchema>
 
 export const loginSchema = z.object({
 	email: z.email('Email inválido'),
@@ -148,6 +161,11 @@ export const paginationSchema = z.object({
 	priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
 	assigneeId: z.string().cuid().optional(),
 })
+
+export type PasswordUpdate = {
+	currentPassword: string
+	newPassword: string
+}
 
 // Error handling utilities
 export class AppError extends Error {

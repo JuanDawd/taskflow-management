@@ -29,7 +29,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from '@/components/ui/popover'
-import { CalendarIcon, X, Plus, Users } from 'lucide-react'
+import { CalendarIcon, X, Users } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -40,7 +40,7 @@ interface ProjectDialogProps {
 	project?: Project & { members?: User[] }
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	onSave: (project: any) => Promise<void>
+	onSave: (project: Project) => Promise<void>
 	availableMembers?: User[]
 }
 
@@ -51,14 +51,14 @@ export function ProjectDialog({
 	onSave,
 	availableMembers = [],
 }: ProjectDialogProps) {
-	const [formData, setFormData] = useState({
+	const [formData, setFormData] = useState<Project>({
 		name: '',
 		description: '',
 		status: 'ACTIVE' as const,
 		priority: 'MEDIUM' as const,
-		startDate: undefined as Date | undefined,
-		endDate: undefined as Date | undefined,
-		memberIds: [] as string[],
+		startDate: '',
+		endDate: '',
+		memberIds: [],
 	})
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
@@ -114,7 +114,7 @@ export function ProjectDialog({
 		} catch (error) {
 			if (error instanceof z.ZodError) {
 				const fieldErrors: Record<string, string> = {}
-				error.errors.forEach((err) => {
+				error.issues.forEach((err) => {
 					if (err.path[0]) {
 						fieldErrors[err.path[0] as string] = err.message
 					}

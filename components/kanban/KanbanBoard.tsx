@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card,  CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PlusIcon } from '@radix-ui/react-icons'
 import { TaskCard } from './TaskCard'
@@ -44,6 +44,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 
 	useEffect(() => {
 		fetchTasks()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [projectId])
 
 	const fetchTasks = async () => {

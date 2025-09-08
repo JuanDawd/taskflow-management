@@ -53,7 +53,6 @@ const priorityConfig = {
 }
 
 export default function ProjectsPage() {
-	const { data: session } = useSession()
 	const { toast } = useToast()
 	const [projects, setProjects] = useState<Project[]>([])
 	const [availableMembers, setAvailableMembers] = useState<User[]>([])
@@ -99,6 +98,7 @@ export default function ProjectsPage() {
 		}
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const handleSaveProject = async (projectData: any) => {
 		try {
 			const url = projectData.id

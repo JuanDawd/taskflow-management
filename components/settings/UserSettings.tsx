@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { User } from '@/types'
 import {
 	Card,
@@ -32,7 +32,11 @@ import {
 	Save,
 	AlertTriangle,
 } from 'lucide-react'
-import { userProfileSchema } from '@/lib/validation'
+import {
+	PasswordUpdate,
+	UserProfile,
+	userProfileSchema,
+} from '@/lib/validation'
 import { z } from 'zod'
 
 interface UserSettingsProps {
@@ -47,11 +51,8 @@ interface UserSettingsProps {
 			comments: boolean
 		}
 	}
-	onUpdateProfile: (data: any) => Promise<void>
-	onUpdatePassword: (data: {
-		currentPassword: string
-		newPassword: string
-	}) => Promise<void>
+	onUpdateProfile: (data: UserProfile) => Promise<void>
+	onUpdatePassword: (data: PasswordUpdate) => Promise<void>
 }
 
 const timezones = [
@@ -107,7 +108,7 @@ export function UserSettings({
 		} catch (error) {
 			if (error instanceof z.ZodError) {
 				const fieldErrors: Record<string, string> = {}
-				error.errors.forEach((err) => {
+				error.issues.forEach((err) => {
 					if (err.path[0]) {
 						fieldErrors[err.path[0] as string] = err.message
 					}
@@ -147,9 +148,10 @@ export function UserSettings({
 				newPassword: '',
 				confirmPassword: '',
 			})
-		} catch (error: any) {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		} catch (error) {
 			setErrors({
-				currentPassword: error.message || 'Error al actualizar contraseña',
+				currentPassword: 'Error al actualizar contraseña',
 			})
 		} finally {
 			setIsLoading(false)

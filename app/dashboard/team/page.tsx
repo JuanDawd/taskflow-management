@@ -7,6 +7,7 @@ import { MemberManagement } from '@/components/team/MemberManagement'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
+import { MemberInvite } from '@/lib/validation'
 
 interface TeamMember extends User {
 	role: 'ADMIN' | 'MEMBER' | 'VIEWER'
@@ -69,7 +70,7 @@ export default function TeamPage() {
 		}
 	}
 
-	const handleInviteMember = async (inviteData: any) => {
+	const handleInviteMember = async (inviteData: MemberInvite) => {
 		try {
 			const response = await fetch('/api/team/members', {
 				method: 'POST',
@@ -86,6 +87,7 @@ export default function TeamPage() {
 				title: 'Invitación enviada',
 				description: `Se ha enviado una invitación a ${inviteData.email}`,
 			})
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
 			toast({
 				title: 'Error',
@@ -95,34 +97,34 @@ export default function TeamPage() {
 		}
 	}
 
-	const handleUpdateMember = async (memberId: string, updateData: any) => {
-		try {
-			const response = await fetch(`/api/team/members/${memberId}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(updateData),
-			})
+	// const handleUpdateMember = async (memberId: string, updateData: any) => {
+	// 	try {
+	// 		const response = await fetch(`/api/team/members/${memberId}`, {
+	// 			method: 'PUT',
+	// 			headers: { 'Content-Type': 'application/json' },
+	// 			body: JSON.stringify(updateData),
+	// 		})
 
-			if (!response.ok) {
-				const errorData = await response.json()
-				throw new Error(errorData.error || 'Error al actualizar miembro')
-			}
+	// 		if (!response.ok) {
+	// 			const errorData = await response.json()
+	// 			throw new Error(errorData.error || 'Error al actualizar miembro')
+	// 		}
 
-			const updatedMember = await response.json()
-			setMembers(members.map((m) => (m.id === memberId ? updatedMember : m)))
+	// 		const updatedMember = await response.json()
+	// 		setMembers(members.map((m) => (m.id === memberId ? updatedMember : m)))
 
-			toast({
-				title: 'Miembro actualizado',
-				description: 'Los cambios se han guardado correctamente',
-			})
-		} catch (error: any) {
-			toast({
-				title: 'Error',
-				description: error.message,
-				variant: 'destructive',
-			})
-		}
-	}
+	// 		toast({
+	// 			title: 'Miembro actualizado',
+	// 			description: 'Los cambios se han guardado correctamente',
+	// 		})
+	// 	} catch (error: any) {
+	// 		toast({
+	// 			title: 'Error',
+	// 			description: error.message,
+	// 			variant: 'destructive',
+	// 		})
+	// 	}
+	// }
 
 	const handleRemoveMember = async (memberId: string) => {
 		try {
@@ -179,7 +181,7 @@ export default function TeamPage() {
 			projects={projects}
 			currentUserRole={currentUserRole}
 			onInviteMember={handleInviteMember}
-			onUpdateMember={handleUpdateMember}
+			// onUpdateMember={handleUpdateMember}
 			onRemoveMember={handleRemoveMember}
 		/>
 	)

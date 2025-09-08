@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
 import { User } from '@/types'
 import { UserSettings } from '@/components/settings/UserSettings'
 import { CompanySettings } from '@/components/settings/CompanySettings'
@@ -9,23 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { Building2, User as UserIcon } from 'lucide-react'
-
-interface Company {
-	id: string
-	name: string
-	description?: string
-	website?: string
-	logo?: string
-	industry?: string
-	size?: string
-	timezone: string
-}
+import { CompanyType, PasswordUpdate, UserProfile } from '@/lib/validation'
 
 export default function SettingsPage() {
-	const { data: session } = useSession()
 	const { toast } = useToast()
 	const [user, setUser] = useState<User | null>(null)
-	const [company, setCompany] = useState<Company | null>(null)
+	const [company, setCompany] = useState<CompanyType | null>(null)
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
@@ -59,7 +47,7 @@ export default function SettingsPage() {
 		}
 	}
 
-	const handleUpdateProfile = async (profileData: any) => {
+	const handleUpdateProfile = async (profileData: UserProfile) => {
 		try {
 			const response = await fetch('/api/user/profile', {
 				method: 'PUT',
@@ -79,16 +67,16 @@ export default function SettingsPage() {
 				title: 'Perfil actualizado',
 				description: 'Los cambios se han guardado correctamente',
 			})
-		} catch (error: any) {
+		} catch (error) {
 			toast({
 				title: 'Error',
-				description: error.message,
+				description: error,
 				variant: 'destructive',
 			})
 		}
 	}
 
-	const handleUpdatePassword = async (passwordData: any) => {
+	const handleUpdatePassword = async (passwordData: PasswordUpdate) => {
 		try {
 			const response = await fetch('/api/user/password', {
 				method: 'PUT',
@@ -105,12 +93,13 @@ export default function SettingsPage() {
 				title: 'Contraseña actualizada',
 				description: 'Tu contraseña se ha cambiado correctamente',
 			})
-		} catch (error: any) {
-			throw new Error(error.message)
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		} catch (error) {
+			throw new Error('Error al actualizar contraseña')
 		}
 	}
 
-	const handleUpdateCompany = async (companyData: any) => {
+	const handleUpdateCompany = async (companyData: unknown) => {
 		try {
 			const response = await fetch('/api/company', {
 				method: 'PUT',
@@ -130,10 +119,10 @@ export default function SettingsPage() {
 				title: 'Empresa actualizada',
 				description: 'Los cambios se han guardado correctamente',
 			})
-		} catch (error: any) {
+		} catch (error) {
 			toast({
 				title: 'Error',
-				description: error.message,
+				description: error,
 				variant: 'destructive',
 			})
 		}

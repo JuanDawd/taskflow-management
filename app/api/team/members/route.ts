@@ -6,7 +6,7 @@ import { memberInviteSchema } from '@/lib/validation'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
 	try {
 		const session = await getServerSession(authOptions)
 		if (!session?.user?.id) {
@@ -19,22 +19,16 @@ export async function GET(request: NextRequest) {
 			},
 			include: {
 				user: true,
-				projects: {
-					include: {
-						project: true,
-					},
-				},
 			},
 			orderBy: {
-				joinedAt: 'desc',
+				createdAt: 'desc',
 			},
 		})
 
 		const formattedMembers = members.map((member) => ({
 			...member.user,
 			role: member.role,
-			joinedAt: member.joinedAt,
-			projects: member.projects.map((p) => p.project),
+			createdAt: member.createdAt,
 		}))
 
 		return NextResponse.json(formattedMembers)
@@ -96,10 +90,10 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Create invitation
-		const invitation = await db.invitation.create({
+		const invitation = await db.teamMember.create({
 			data: {
 				email: validatedData.email,
-				role: validatedData.role,
+				role: validatedData.role === 'VIEWER' ? 'MEMBER' : validatedData.role,
 				token: randomBytes(32).toString('hex'),
 				expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
 				companyId: session.user.companyId,

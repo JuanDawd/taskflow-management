@@ -13,6 +13,8 @@ import {
 	CardTitle,
 } from '@/components/ui/card'
 import { CheckIcon } from '@radix-ui/react-icons'
+import { signIn } from 'next-auth/react'
+import { toast } from '@/hooks/use-toast'
 
 export default function LoginPage() {
 	const [email, setEmail] = useState('')
@@ -25,16 +27,19 @@ export default function LoginPage() {
 		setIsLoading(true)
 
 		try {
-			const response = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, password }),
+			const result = await signIn('credentials', {
+				email,
+				password,
+				redirect: false,
 			})
-
-			if (response.ok) {
+			if (result?.ok) {
 				router.push('/dashboard')
 			} else {
-				console.error('Error en el login')
+				toast({
+					variant: 'destructive',
+					title: 'Error de inicio de sesión',
+					description: result?.error || 'Ocurrió un error inesperado.',
+				})
 			}
 		} catch (error) {
 			console.error('Error:', error)

@@ -5,7 +5,6 @@ import { Task, User, Comment } from '@/types'
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog'
@@ -24,18 +23,14 @@ import {
 } from '@/components/ui/select'
 import {
 	Calendar,
-	Clock,
-	Flag,
 	MessageCircle,
 	Send,
 	Edit,
 	Save,
 	X,
-	User as UserIcon,
 } from 'lucide-react'
 import { format, isValid, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
 
 interface TaskDetailDialogProps {
 	task: Task & {
@@ -58,8 +53,6 @@ export function TaskDetailDialog({
 	open,
 	onOpenChange,
 	onEdit,
-	onDelete,
-	onMove,
 }: TaskDetailDialogProps) {
 	const [isEditing, setIsEditing] = useState(false)
 	const [editedTask, setEditedTask] = useState(task)
@@ -86,12 +79,7 @@ export function TaskDetailDialog({
 			userId: 'current-user', // This should come from auth
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
-			user: {
-				id: 'current-user',
-				name: 'Usuario Actual',
-				email: 'usuario@ejemplo.com',
-				avatar: null,
-			},
+			parentId: null,
 		}
 
 		setComments([...comments, comment])
@@ -155,7 +143,10 @@ export function TaskDetailDialog({
 								<Select
 									value={editedTask.status}
 									onValueChange={(value) =>
-										setEditedTask({ ...editedTask, status: value as any })
+										setEditedTask({
+											...editedTask,
+											status: value as TaskDetailDialogProps['task']['status'],
+										})
 									}
 								>
 									<SelectTrigger>
@@ -175,34 +166,6 @@ export function TaskDetailDialog({
 							)}
 						</div>
 
-						<div>
-							<Label>Prioridad</Label>
-							{isEditing ? (
-								<Select
-									value={editedTask.priority}
-									onValueChange={(value) =>
-										setEditedTask({ ...editedTask, priority: value as any })
-									}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="LOW">Baja</SelectItem>
-										<SelectItem value="MEDIUM">Media</SelectItem>
-										<SelectItem value="HIGH">Alta</SelectItem>
-										<SelectItem value="URGENT">Urgente</SelectItem>
-									</SelectContent>
-								</Select>
-							) : (
-								<div className="mt-1">
-									<Badge variant="outline">
-										<Flag className="h-3 w-3 mr-1" />
-										{task.priority}
-									</Badge>
-								</div>
-							)}
-						</div>
 					</div>
 
 					{/* Due Date and Assignee */}

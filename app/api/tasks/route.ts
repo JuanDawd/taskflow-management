@@ -14,9 +14,7 @@ export async function GET(request: NextRequest) {
 
 		const { searchParams } = new URL(request.url)
 		const projectId = searchParams.get('projectId')
-		const status = searchParams.get('status')
 		const assigneeId = searchParams.get('assigneeId')
-		const priority = searchParams.get('priority')
 		const search = searchParams.get('search')
 
 		const tasks = await db.task.findMany({
@@ -34,9 +32,8 @@ export async function GET(request: NextRequest) {
 					],
 				},
 				...(projectId && { projectId }),
-				...(status && { status: status as any }),
+
 				...(assigneeId && { assigneeId }),
-				...(priority && { priority: priority as any }),
 				...(search && {
 					OR: [
 						{ title: { contains: search, mode: 'insensitive' } },
@@ -55,7 +52,7 @@ export async function GET(request: NextRequest) {
 				},
 			},
 			orderBy: {
-				position: 'asc',
+				dueDate: 'asc',
 			},
 		})
 
@@ -104,23 +101,9 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// Get the highest position for the status
-		const lastTask = await db.task.findFirst({
-			where: {
-				projectId: validatedData.projectId,
-				status: validatedData.status,
-			},
-			orderBy: {
-				position: 'desc',
-			},
-		})
-
-		const position = lastTask ? lastTask.position + 1 : 0
-
 		const task = await db.task.create({
 			data: {
 				...validatedData,
-				position,
 				createdById: session.user.id,
 			},
 			include: {

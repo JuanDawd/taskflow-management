@@ -11,91 +11,26 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-	Building2,
-	Globe,
-	Users,
-	Save,
-	Upload,
-	AlertTriangle,
-} from 'lucide-react'
-import { companySchema } from '@/lib/validation'
+import { Building2, Save, Upload, AlertTriangle } from 'lucide-react'
+import { companySchema, CompanyType } from '@/lib/validation'
 import { z } from 'zod'
 
-interface Company {
-	id: string
-	name: string
-	description?: string
-	website?: string
-	logo?: string
-	industry?: string
-	size?: string
-	timezone: string
-}
-
 interface CompanySettingsProps {
-	company: Company
-	onUpdateCompany: (data: any) => Promise<void>
+	company: CompanyType
+	onUpdateCompany: (data: CompanyType) => Promise<void>
 	onUploadLogo: (file: File) => Promise<string>
 }
-
-const industryOptions = [
-	'Tecnología',
-	'Consultoría',
-	'Marketing',
-	'Educación',
-	'Salud',
-	'Finanzas',
-	'Manufactura',
-	'Retail',
-	'Medios',
-	'Gobierno',
-	'Sin ánimo de lucro',
-	'Otro',
-]
-
-const sizeOptions = [
-	{ value: '1-10', label: '1-10 empleados' },
-	{ value: '11-50', label: '11-50 empleados' },
-	{ value: '51-200', label: '51-200 empleados' },
-	{ value: '201-500', label: '201-500 empleados' },
-	{ value: '500+', label: 'Más de 500 empleados' },
-]
-
-const timezones = [
-	{ value: 'America/New_York', label: 'Eastern Time (ET)' },
-	{ value: 'America/Chicago', label: 'Central Time (CT)' },
-	{ value: 'America/Denver', label: 'Mountain Time (MT)' },
-	{ value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
-	{ value: 'Europe/London', label: 'Greenwich Mean Time (GMT)' },
-	{ value: 'Europe/Paris', label: 'Central European Time (CET)' },
-	{ value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)' },
-	{ value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)' },
-	{ value: 'UTC', label: 'Coordinated Universal Time (UTC)' },
-]
 
 export function CompanySettings({
 	company,
 	onUpdateCompany,
 	onUploadLogo,
 }: CompanySettingsProps) {
-	const [formData, setFormData] = useState({
+	const [formData, setFormData] = useState<CompanyType>({
 		name: company.name || '',
-		description: company.description || '',
-		website: company.website || '',
+		slug: company.slug || '',
 		logo: company.logo || '',
-		industry: company.industry || '',
-		size: company.size || '',
-		timezone: company.timezone || 'UTC',
 	})
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
@@ -113,7 +48,7 @@ export function CompanySettings({
 		} catch (error) {
 			if (error instanceof z.ZodError) {
 				const fieldErrors: Record<string, string> = {}
-				error.errors.forEach((err) => {
+				error.issues.forEach((err) => {
 					if (err.path[0]) {
 						fieldErrors[err.path[0] as string] = err.message
 					}
@@ -133,6 +68,7 @@ export function CompanySettings({
 		try {
 			const logoUrl = await onUploadLogo(file)
 			setFormData({ ...formData, logo: logoUrl })
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			setErrors({ logo: 'Error al subir el logo' })
 		} finally {
@@ -225,109 +161,6 @@ export function CompanySettings({
 								{errors.name && (
 									<p className="text-sm text-red-500 mt-1">{errors.name}</p>
 								)}
-							</div>
-
-							<div>
-								<Label htmlFor="description">Descripción</Label>
-								<Textarea
-									id="description"
-									value={formData.description}
-									onChange={(e) =>
-										setFormData({ ...formData, description: e.target.value })
-									}
-									placeholder="Describe tu empresa y lo que hace..."
-									rows={3}
-								/>
-								{errors.description && (
-									<p className="text-sm text-red-500 mt-1">
-										{errors.description}
-									</p>
-								)}
-							</div>
-
-							<div>
-								<Label htmlFor="website">Sitio web</Label>
-								<Input
-									id="website"
-									type="url"
-									value={formData.website}
-									onChange={(e) =>
-										setFormData({ ...formData, website: e.target.value })
-									}
-									className={errors.website ? 'border-red-500' : ''}
-									placeholder="https://www.ejemplo.com"
-								/>
-								{errors.website && (
-									<p className="text-sm text-red-500 mt-1">{errors.website}</p>
-								)}
-							</div>
-
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								<div>
-									<Label>Industria</Label>
-									<Select
-										value={formData.industry}
-										onValueChange={(value) =>
-											setFormData({ ...formData, industry: value })
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Seleccionar industria" />
-										</SelectTrigger>
-										<SelectContent>
-											{industryOptions.map((industry) => (
-												<SelectItem key={industry} value={industry}>
-													{industry}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-
-								<div>
-									<Label>Tamaño de la empresa</Label>
-									<Select
-										value={formData.size}
-										onValueChange={(value) =>
-											setFormData({ ...formData, size: value })
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Seleccionar tamaño" />
-										</SelectTrigger>
-										<SelectContent>
-											{sizeOptions.map((option) => (
-												<SelectItem key={option.value} value={option.value}>
-													{option.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-
-							<div>
-								<Label>Zona horaria de la empresa</Label>
-								<Select
-									value={formData.timezone}
-									onValueChange={(value) =>
-										setFormData({ ...formData, timezone: value })
-									}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{timezones.map((timezone) => (
-											<SelectItem key={timezone.value} value={timezone.value}>
-												{timezone.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<p className="text-sm text-muted-foreground mt-1">
-									Zona horaria predeterminada para todos los miembros del equipo
-								</p>
 							</div>
 						</div>
 
