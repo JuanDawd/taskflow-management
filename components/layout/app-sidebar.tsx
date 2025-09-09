@@ -31,6 +31,7 @@ import {
 	DropdownMenuTrigger,
 } from '@radix-ui/react-dropdown-menu'
 import { ChevronUpIcon, User2 } from 'lucide-react'
+import { ThemeToggle } from '../theme-toggle'
 
 export function AppSidebar() {
 	const { data: session } = useSession()
@@ -50,7 +51,6 @@ export function AppSidebar() {
 		{ name: 'Dashboard', href: '/dashboard', icon: DashboardIcon },
 		{ name: 'Proyectos', href: '/dashboard/projects', icon: RocketIcon },
 		{ name: 'Equipo', href: '/dashboard/team', icon: PersonIcon },
-		{ name: 'Projects', href: '/dashboard/team', icon: PersonIcon },
 	]
 
 	return (
@@ -74,7 +74,7 @@ export function AppSidebar() {
 					</SidebarGroupContent>
 				</SidebarGroup>
 				<SidebarGroup>
-					<SidebarGroupLabel>Application</SidebarGroupLabel>
+					<SidebarGroupLabel>Rutas</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							{navigation.map((item) => (
@@ -105,6 +105,9 @@ export function AppSidebar() {
 								</SidebarMenuButton>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent side="top">
+								<DropdownMenuItem asChild>
+									<ThemeToggle />
+								</DropdownMenuItem>
 								<DropdownMenuItem asChild>
 									<Button
 										onClick={handleLogout}

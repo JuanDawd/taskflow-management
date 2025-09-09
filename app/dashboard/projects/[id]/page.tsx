@@ -320,15 +320,6 @@ export default function ProjectDetailPage() {
 			{/* Project Header */}
 			<div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
 				<div className="flex items-center gap-4">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => router.push('/dashboard/projects')}
-					>
-						<ArrowLeft className="h-4 w-4 mr-2" />
-						Proyectos
-					</Button>
-
 					<div className="flex items-start gap-4">
 						<div className={cn('p-3 rounded-lg border', statusInfo.color)}>
 							<StatusIcon className="h-6 w-6" />
@@ -338,18 +329,6 @@ export default function ProjectDetailPage() {
 							<div className="flex items-center gap-2">
 								<h1 className="text-2xl font-bold">{project.name}</h1>
 								<Badge className={statusInfo.color}>{statusInfo.label}</Badge>
-								<Badge
-									variant="outline"
-									className={cn('border-2', priorityInfo.textColor)}
-								>
-									<div
-										className={cn(
-											'w-2 h-2 rounded-full mr-1',
-											priorityInfo.color,
-										)}
-									/>
-									{priorityInfo.label}
-								</Badge>
 							</div>
 							<p className="text-muted-foreground max-w-2xl">
 								{project.description || 'Sin descripción'}

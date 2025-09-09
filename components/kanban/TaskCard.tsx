@@ -78,13 +78,16 @@ export function TaskCard({
 		const now = new Date()
 
 		// Get the task due date (assuming task.dueDate is a Date object or date string)
-		if (!dueDate || !isValid(dueDate)) return null
+		if (!dueDate || typeof dueDate !== 'string') return null
+
+		const dueDateParsed = new Date(dueDate)
+		if (!isValid(dueDateParsed)) return null
 
 		// Calculate the difference in milliseconds
-		const timeDifference = dueDate.getTime() - now.getTime()
+		const timeDifference = dueDateParsed.getTime() - now.getTime()
 
 		// Convert milliseconds to hours (1 hour = 3,600,000 milliseconds)
-		const hours = timeDifference / (1000 * 60 * 60)
+		const hours = (timeDifference / (1000 * 60 * 60)).toFixed(0)
 
 		return hours
 	}
@@ -226,7 +229,6 @@ export function TaskCard({
 				</CardContent>
 			</Card>
 
-			{/* Task Detail Dialog
 			<TaskDetailDialog
 				task={task}
 				open={showDetails}
@@ -235,7 +237,6 @@ export function TaskCard({
 				onDelete={onDelete}
 				onMove={onMove}
 			/>
-			 */}
 		</>
 	)
 }

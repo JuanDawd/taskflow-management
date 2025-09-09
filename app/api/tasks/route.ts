@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { taskSchema } from '@/lib/validation'
 import { z } from 'zod'
+import { CreateTaskSchema } from '@/lib/validation'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -74,7 +74,13 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const validatedData = taskSchema.parse(body)
+		const { dueDate } = body
+		const parsedDueDate = dueDate ? new Date(dueDate) : null
+		console.log('Here', parsedDueDate)
+		const validatedData = CreateTaskSchema.parse({
+			...body,
+			dueDate: parsedDueDate,
+		})
 
 		// Check if user has access to the project
 		const project = await db.project.findFirst({

@@ -20,22 +20,13 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { User } from '@/types'
 
 interface CreateTaskDialogProps {
 	open: boolean
 	onOpenChange: (open: boolean) => void
 	onTaskCreated: () => void
 	projectId?: string
-}
-
-interface Project {
-	id: string
-	name: string
-}
-
-interface User {
-	id: string
-	name: string
 }
 
 export default function CreateTaskDialog({
@@ -52,28 +43,14 @@ export default function CreateTaskDialog({
 		priority: 'MEDIUM',
 		dueDate: '',
 	})
-	const [projects, setProjects] = useState<Project[]>([])
 	const [users, setUsers] = useState<User[]>([])
 	const [isLoading, setIsLoading] = useState(false)
 
 	useEffect(() => {
 		if (open) {
-			fetchProjects()
 			fetchUsers()
 		}
 	}, [open])
-
-	const fetchProjects = async () => {
-		try {
-			const response = await fetch('/api/projects')
-			if (response.ok) {
-				const data = await response.json()
-				setProjects(data.projects)
-			}
-		} catch (error) {
-			console.error('Error fetching projects:', error)
-		}
-	}
 
 	const fetchUsers = async () => {
 		try {
@@ -161,26 +138,6 @@ export default function CreateTaskDialog({
 
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
-								<Label>Proyecto *</Label>
-								<Select
-									value={formData.projectId}
-									onValueChange={(value) => handleChange('projectId', value)}
-									required
-								>
-									<SelectTrigger>
-										<SelectValue placeholder="Seleccionar proyecto" />
-									</SelectTrigger>
-									<SelectContent>
-										{projects.map((project) => (
-											<SelectItem key={project.id} value={project.id}>
-												{project.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							<div className="space-y-2">
 								<Label>Prioridad</Label>
 								<Select
 									value={formData.priority}
@@ -210,7 +167,7 @@ export default function CreateTaskDialog({
 										<SelectValue placeholder="Sin asignar" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="">Sin asignar</SelectItem>
+										<SelectItem value="-">Sin asignar</SelectItem>
 										{users.map((user) => (
 											<SelectItem key={user.id} value={user.id}>
 												{user.name}
