@@ -3,16 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { z } from 'zod'
+import { UpdateTeamMemberSchema } from '@/lib/validation'
 
 interface Context {
 	params: Promise<{ id: string }>
 }
-
-// Validation schema for member update
-const updateMemberSchema = z.object({
-	role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']).optional(),
-	projectIds: z.array(z.string()).optional(),
-})
 
 export async function GET(request: NextRequest, { params }: Context) {
 	try {
@@ -67,8 +62,8 @@ export async function PUT(request: NextRequest, { params }: Context) {
 
 		// Validate request body
 		const body = await request.json()
-		const validatedData = updateMemberSchema.parse(body)
-		const { role, projectIds } = validatedData
+		const validatedData = UpdateTeamMemberSchema.parse(body)
+		const { role } = validatedData
 
 		// Check if user is admin
 		const adminMember = await db.teamMember.findFirst({
@@ -141,7 +136,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 						id,
 					},
 					data: {
-						role: role === 'VIEWER' ? 'MEMBER' : role,
+						role,
 					},
 					include: {
 						user: true,

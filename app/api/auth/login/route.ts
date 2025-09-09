@@ -1,13 +1,12 @@
+// app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
 	try {
 		const { email, password } = await request.json()
 
-		// Buscar usuario con su empresa
 		const user = await db.user.findUnique({
 			where: { email },
 			include: {
@@ -32,20 +31,9 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		// Crear token JWT
-		const token = jwt.sign(
-			{
-				userId: user.id,
-				email: user.email,
-				role: user.role,
-				companyId: user.companyId,
-			},
-			process.env.JWT_SECRET || 'fallback-secret',
-			{ expiresIn: '7d' },
-		)
 
-		// Crear respuesta con cookie
-		const response = NextResponse.json({
+		// Just return user data for NextAuth
+		return NextResponse.json({
 			message: 'Login exitoso',
 			user: {
 				id: user.id,
@@ -59,16 +47,6 @@ export async function POST(request: NextRequest) {
 				},
 			},
 		})
-
-		// Establecer cookie httpOnly
-		response.cookies.set('auth-token', token, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
-			maxAge: 60 * 60 * 24 * 7, // 7 días
-		})
-
-		return response
 	} catch (error) {
 		console.error('Error en login:', error)
 		return NextResponse.json(

@@ -6,23 +6,7 @@ import { Button } from '@/components/ui/button'
 import { PlusIcon } from '@radix-ui/react-icons'
 import { TaskCard } from './TaskCard'
 import CreateTaskDialog from './CreateTaskDialog'
-
-interface Task {
-	id: string
-	title: string
-	description?: string
-	status: string
-	priority: string
-	dueDate?: string
-	assignee?: {
-		id: string
-		name: string
-	}
-	project: {
-		id: string
-		name: string
-	}
-}
+import { Task } from '@/types'
 
 interface KanbanBoardProps {
 	projectId?: string
@@ -53,7 +37,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 			const response = await fetch(url)
 			if (response.ok) {
 				const data = await response.json()
-				setTasks(data.tasks)
+				setTasks(data)
 			}
 		} catch (error) {
 			console.error('Error fetching tasks:', error)
@@ -85,11 +69,11 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 			})
 
 			if (response.ok) {
-				setTasks((prevTasks) =>
-					prevTasks.map((task) =>
-						task.id === draggedTask ? { ...task, status: newStatus } : task,
-					),
-				)
+				// setTasks((prevTasks) =>
+				// 	prevTasks.map((task) =>
+				// 		task.id === draggedTask ? { ...task, status: newStatus } : task,
+				// 	),
+				// )
 			}
 		} catch (error) {
 			console.error('Error updating task status:', error)
@@ -98,16 +82,16 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 		setDraggedTask(null)
 	}
 
-	const getTasksByStatus = (status: string) => {
-		return tasks.filter((task) => task.status === status)
-	}
-
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center h-64">
 				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
 			</div>
 		)
+	}
+
+	const getTasksByStatus = (status: string) => {
+		return tasks.filter((task) => task.status === status)
 	}
 
 	return (
@@ -148,12 +132,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 
 						<div className="space-y-3">
 							{getTasksByStatus(column.id).map((task) => (
-								<TaskCard
-									key={task.id}
-									task={task}
-									onDragStart={handleDragStart}
-									onTaskUpdate={fetchTasks}
-								/>
+								<TaskCard key={task.id} task={task} />
 							))}
 						</div>
 					</div>

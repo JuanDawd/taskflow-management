@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { userProfileSchema } from '@/lib/validation'
 import { z } from 'zod'
-
-export async function GET(request: NextRequest) {
+import { db } from '@/lib/db'
+import { UpdateUserSchema } from '@/lib/validation'
+export async function GET() {
 	try {
 		const session = await getServerSession(authOptions)
 		if (!session?.user?.id) {
@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const validatedData = userProfileSchema.parse(body)
+		const validatedData = UpdateUserSchema.parse(body)
 
 		const updatedUser = await db.user.update({
 			where: { id: session.user.id },

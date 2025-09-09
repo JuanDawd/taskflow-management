@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { projectSchema } from '@/lib/validation'
 import { z } from 'zod'
+import { UpdateProjectSchema } from '@/lib/validation'
 
-interface Context {
-	params: Promise<{ id: string }> // Ahora es Promise
+type Context = {
+	params: Promise<{ id: string }>
 }
-export async function GET({ params }: Context) {
+export async function GET(request: Request, { params }: Context) {
 	try {
-		const { id } = await params
+		const data = await params
+		const id = data.id
+
 		const session = await getServerSession(authOptions)
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -20,7 +22,7 @@ export async function GET({ params }: Context) {
 			where: {
 				AND: [
 					{ OR: [{ id }, { slug: id }] },
-					{ companyId: session.user.companyId },
+					{ companyId: session.user.company.id },
 					{
 						OR: [{ members: { some: { userId: session.user.id } } }],
 					},
@@ -109,7 +111,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		}
 
 		const body = await request.json()
-		const validatedData = projectSchema.parse(body)
+		const validatedData = UpdateProjectSchema.parse(body)
 
 		// Update project
 		const updatedProject = await db.project.update({

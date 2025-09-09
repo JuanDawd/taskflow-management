@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Dispatch } from 'react'
 import {
 	Card,
 	CardContent,
@@ -26,82 +26,22 @@ import {
 } from 'recharts'
 import { CheckCircle, AlertCircle, TrendingUp, Target } from 'lucide-react'
 import { Button } from '../ui/button'
+import { DashboardMetrics } from '@/types'
 
-interface DashboardMetrics {
-	totalTasks: number
-	completedTasks: number
-	overdueTasks: number
-	activeProjects: number
-	teamMembers: number
-	avgCompletionTime: number
-	productivityScore: number
-	tasksByStatus: Array<{ name: string; value: number; color: string }>
-	tasksByPriority: Array<{ name: string; value: number; color: string }>
-	weeklyProgress: Array<{ date: string; completed: number; created: number }>
-	topPerformers: Array<{
-		id: string
-		name: string
-		avatar?: string
-		completedTasks: number
-		score: number
-	}>
-	projectProgress: Array<{
-		name: string
-		completed: number
-		total: number
-		percentage: number
-	}>
+type DashboardProps = {
+	metrics: DashboardMetrics
+	timeRange: string
+	setTimeRange: Dispatch<string>
 }
 
-export function Dashboard() {
-	const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
-	const [isLoading, setIsLoading] = useState(true)
-	const [timeRange, setTimeRange] = useState('7d')
-
-	useEffect(() => {
-		const fetchDashboardData = async () => {
-			try {
-				setIsLoading(true)
-				const response = await fetch(`/api/dashboard?range=${timeRange}`)
-				if (response.ok) {
-					const data = await response.json()
-					setMetrics(data)
-				}
-			} catch (error) {
-				console.error('Error fetching dashboard data:', error)
-			} finally {
-				setIsLoading(false)
-			}
-		}
-		fetchDashboardData()
-	}, [timeRange])
-
-	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-			</div>
-		)
-	}
-
-	if (!metrics) {
-		return (
-			<div className="text-center py-6 text-gray-500">
-				No se pudieron cargar las métricas
-			</div>
-		)
-	}
-
+export function Dashboard({
+	metrics,
+	timeRange,
+	setTimeRange,
+}: DashboardProps) {
 	return (
 		<div className="space-y-6">
-			{/* Header */}
-			<div className="flex justify-between items-center">
-				<div>
-					<h1 className="text-3xl font-bold">Dashboard</h1>
-					<p className="text-gray-600">
-						Resumen de actividad y métricas del equipo
-					</p>
-				</div>
+			<div className="flex justify-end items-center">
 				<div className="flex gap-2">
 					{[
 						{ value: '7d', label: '7 días' },

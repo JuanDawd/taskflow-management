@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { memberInviteSchema } from '@/lib/validation'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
 
@@ -92,8 +91,7 @@ export async function POST(request: NextRequest) {
 		// Create invitation
 		const invitation = await db.teamMember.create({
 			data: {
-				email: validatedData.email,
-				role: validatedData.role === 'VIEWER' ? 'MEMBER' : validatedData.role,
+				role: validatedData.role,
 				token: randomBytes(32).toString('hex'),
 				expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
 				companyId: session.user.companyId,

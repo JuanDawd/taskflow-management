@@ -1,56 +1,37 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
 import { Project, User } from '@/types'
 import {
 	Card,
+	CardAction,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { ProjectDialog } from '@/components/projects/ProjectDialog'
 import {
 	Plus,
 	Search,
-	Calendar,
-	Users,
-	CheckCircle2,
-	Clock,
-	MoreHorizontal,
-	Edit,
+	FolderOpen,
 	Archive,
+	Edit,
+	MoreHorizontal,
 	Trash2,
 } from 'lucide-react'
+import { useApi } from '@/hooks/useApi'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import {
 	DropdownMenu,
+	DropdownMenuTrigger,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { format, parseISO, isValid } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
-import { useApi } from '@/hooks/useApi'
-import { useToast } from '@/hooks/use-toast'
-
-const statusConfig = {
-	ACTIVE: { color: 'bg-green-100 text-green-700', label: 'Activo' },
-	COMPLETED: { color: 'bg-blue-100 text-blue-700', label: 'Completado' },
-	ARCHIVED: { color: 'bg-gray-100 text-gray-700', label: 'Archivado' },
-}
-
-const priorityConfig = {
-	LOW: { color: 'border-l-gray-400', label: 'Baja' },
-	MEDIUM: { color: 'border-l-blue-400', label: 'Media' },
-	HIGH: { color: 'border-l-orange-400', label: 'Alta' },
-	URGENT: { color: 'border-l-red-400', label: 'Urgente' },
-}
+} from '@radix-ui/react-dropdown-menu'
 
 export default function ProjectsPage() {
 	const { toast } = useToast()
@@ -61,11 +42,12 @@ export default function ProjectsPage() {
 	const [showProjectDialog, setShowProjectDialog] = useState(false)
 	const [statusFilter, setStatusFilter] = useState<string>('all')
 
-	const { loading, error, execute } = useApi<Project[]>()
+	const { loading, execute } = useApi<Project[]>()
 
 	useEffect(() => {
 		loadProjects()
 		loadMembers()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	const loadProjects = async () => {
@@ -77,6 +59,7 @@ export default function ProjectsPage() {
 				setProjects(data)
 				return data
 			})
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			toast({
 				title: 'Error',
@@ -134,10 +117,10 @@ export default function ProjectsPage() {
 					description: 'El nuevo proyecto se ha creado correctamente',
 				})
 			}
-		} catch (error: any) {
+		} catch (error) {
 			toast({
 				title: 'Error',
-				description: error.message,
+				description: error,
 				variant: 'destructive',
 			})
 		}
@@ -158,10 +141,10 @@ export default function ProjectsPage() {
 				title: 'Proyecto eliminado',
 				description: 'El proyecto se ha eliminado correctamente',
 			})
-		} catch (error: any) {
+		} catch (error: unknown) {
 			toast({
 				title: 'Error',
-				description: error.message,
+				description: error,
 				variant: 'destructive',
 			})
 		}
@@ -171,9 +154,8 @@ export default function ProjectsPage() {
 		const matchesSearch =
 			project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			project.description?.toLowerCase().includes(searchTerm.toLowerCase())
-		const matchesStatus =
-			statusFilter === 'all' || project.status === statusFilter
-		return matchesSearch && matchesStatus
+
+		return matchesSearch
 	})
 
 	const openEditDialog = (project: Project) => {
@@ -189,13 +171,7 @@ export default function ProjectsPage() {
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-				<div>
-					<h1 className="text-3xl font-bold">Proyectos</h1>
-					<p className="text-muted-foreground">
-						Gestiona y organiza todos tus proyectos
-					</p>
-				</div>
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4">
 				<Button onClick={openCreateDialog}>
 					<Plus className="mr-2 h-4 w-4" />
 					Nuevo Proyecto
@@ -277,40 +253,24 @@ export default function ProjectsPage() {
 			) : (
 				<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{filteredProjects.map((project) => {
-						const statusInfo =
-							statusConfig[project.status as keyof typeof statusConfig]
-						const priorityInfo =
-							priorityConfig[project.priority as keyof typeof priorityConfig]
-						const endDate = project.endDate ? parseISO(project.endDate) : null
-						const isOverdue =
-							endDate &&
-							isValid(endDate) &&
-							endDate < new Date() &&
-							project.status !== 'COMPLETED'
-
 						return (
 							<Card
 								key={project.id}
 								className={cn(
 									'hover:shadow-md transition-all duration-200 border-l-4 cursor-pointer',
-									priorityInfo.color,
-									isOverdue && 'ring-2 ring-red-200',
 								)}
 								onClick={() =>
 									(window.location.href = `/dashboard/projects/${project.id}`)
 								}
 							>
 								<CardHeader className="pb-3">
-									<div className="flex items-start justify-between">
-										<div className="flex-1">
-											<CardTitle className="text-lg leading-tight line-clamp-1">
-												{project.name}
-											</CardTitle>
-											<CardDescription className="line-clamp-2 mt-1">
-												{project.description || 'Sin descripción'}
-											</CardDescription>
-										</div>
-
+									<CardTitle className="text-lg leading-tight line-clamp-1">
+										{project.name}
+									</CardTitle>
+									<CardDescription className="line-clamp-2 mt-1">
+										{project.description || 'Sin descripción'}
+									</CardDescription>
+									<CardAction>
 										<DropdownMenu>
 											<DropdownMenuTrigger
 												asChild
@@ -324,7 +284,7 @@ export default function ProjectsPage() {
 													<MoreHorizontal className="h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
+											<DropdownMenuContent>
 												<DropdownMenuItem
 													onClick={(e) => {
 														e.stopPropagation()
@@ -356,68 +316,8 @@ export default function ProjectsPage() {
 												</DropdownMenuItem>
 											</DropdownMenuContent>
 										</DropdownMenu>
-									</div>
+									</CardAction>
 								</CardHeader>
-
-								<CardContent className="space-y-4">
-									{/* Status and Priority */}
-									<div className="flex items-center justify-between">
-										<Badge className={statusInfo.color}>
-											{statusInfo.label}
-										</Badge>
-										<Badge variant="outline">{priorityInfo.label}</Badge>
-									</div>
-
-									{/* Stats */}
-									<div className="grid grid-cols-2 gap-4 text-sm">
-										<div className="flex items-center gap-2 text-muted-foreground">
-											<CheckCircle2 className="h-4 w-4" />
-											<span>{project._count?.tasks || 0} tareas</span>
-										</div>
-										<div className="flex items-center gap-2 text-muted-foreground">
-											<Users className="h-4 w-4" />
-											<span>{project._count?.members || 0} miembros</span>
-										</div>
-									</div>
-
-									{/* Due Date */}
-									{endDate && isValid(endDate) && (
-										<div
-											className={cn(
-												'flex items-center gap-2 text-sm',
-												isOverdue ? 'text-red-600' : 'text-muted-foreground',
-											)}
-										>
-											<Calendar className="h-4 w-4" />
-											<span>
-												Finaliza:{' '}
-												{format(endDate, 'dd MMM yyyy', { locale: es })}
-											</span>
-											{isOverdue && <span className="text-xs">(Vencido)</span>}
-										</div>
-									)}
-
-									{/* Team Members Preview */}
-									{project.members && project.members.length > 0 && (
-										<div className="flex items-center gap-2">
-											<div className="flex -space-x-2">
-												{project.members.slice(0, 3).map((member) => (
-													<div
-														key={member.id}
-														className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-medium"
-													>
-														{member.name?.charAt(0).toUpperCase()}
-													</div>
-												))}
-												{project.members.length > 3 && (
-													<div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-muted-foreground">
-														+{project.members.length - 3}
-													</div>
-												)}
-											</div>
-										</div>
-									)}
-								</CardContent>
 							</Card>
 						)
 					})}

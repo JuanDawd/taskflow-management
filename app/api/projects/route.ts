@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { projectSchema } from '@/lib/validation'
 import { z } from 'zod'
+import { CreateProjectSchema } from '@/lib/validation'
 
 export async function GET() {
 	try {
@@ -66,28 +66,28 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const validatedData = projectSchema.parse(body)
+		const validatedData = CreateProjectSchema.parse(body)
 
 		const project = await db.project.create({
 			data: {
 				...validatedData,
 				ownerId: session.user.id,
-				companyId: session.user.companyId,
-				members: body.memberIds
-					? {
-							create: body.memberIds.map((userId: string) => ({
-								userId,
-								role: 'MEMBER',
-							})),
-					  }
-					: undefined,
+				companyId: session.user.company.id,
+				// members: body.memberIds
+				// 	? {
+				// 			create: body.memberIds.map((userId: string) => ({
+				// 				userId,
+				// 				role: 'MEMBER',
+				// 			})),
+				// 	  }
+				// 	: undefined,
 			},
 			include: {
-				members: {
-					include: {
-						user: true,
-					},
-				},
+				// members: {
+				// 	include: {
+				// 		user: true,
+				// 	},
+				// },
 				_count: {
 					select: {
 						tasks: true,
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
 		const formattedProject = {
 			...project,
-			members: project.members.map((member) => member.user),
+			// members: project.members.map((member) => member.user),
 		}
 
 		return NextResponse.json(formattedProject, { status: 201 })

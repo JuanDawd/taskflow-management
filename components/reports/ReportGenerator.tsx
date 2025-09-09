@@ -117,6 +117,7 @@ export function ReportGenerator() {
 				title: 'Reporte generado',
 				description: 'El reporte se ha descargado exitosamente',
 			})
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			toast({
 				title: 'Error',

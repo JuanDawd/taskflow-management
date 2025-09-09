@@ -1,19 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User } from '@/types'
+import { UpdatePasswordForm, User } from '@/types'
 import { UserSettings } from '@/components/settings/UserSettings'
 import { CompanySettings } from '@/components/settings/CompanySettings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { Building2, User as UserIcon } from 'lucide-react'
-import { CompanyType, PasswordUpdate, UserProfile } from '@/lib/validation'
+import { Company } from '@prisma/client'
 
 export default function SettingsPage() {
 	const { toast } = useToast()
 	const [user, setUser] = useState<User | null>(null)
-	const [company, setCompany] = useState<CompanyType | null>(null)
+	const [company, setCompany] = useState<Company | null>(null)
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
@@ -47,7 +47,7 @@ export default function SettingsPage() {
 		}
 	}
 
-	const handleUpdateProfile = async (profileData: UserProfile) => {
+	const handleUpdateProfile = async (profileData: User) => {
 		try {
 			const response = await fetch('/api/user/profile', {
 				method: 'PUT',
@@ -76,7 +76,7 @@ export default function SettingsPage() {
 		}
 	}
 
-	const handleUpdatePassword = async (passwordData: PasswordUpdate) => {
+	const handleUpdatePassword = async (passwordData: UpdatePasswordForm) => {
 		try {
 			const response = await fetch('/api/user/password', {
 				method: 'PUT',

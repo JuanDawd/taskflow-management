@@ -2,14 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Project, Task } from '@/types'
+import {
+	Project,
+	ProjectStats,
+	ProjectWithRelations,
+	TaskWithRelations,
+} from '@/types'
 import KanbanBoard from '@/components/kanban/KanbanBoard'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -50,7 +55,7 @@ import {
 	MessageSquare,
 	FileText,
 } from 'lucide-react'
-import { format, parseISO, isValid, differenceInDays } from 'date-fns'
+import { format, isValid, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
@@ -84,25 +89,14 @@ const priorityConfig = {
 	URGENT: { color: 'bg-red-500', label: 'Urgente', textColor: 'text-red-600' },
 }
 
-interface ProjectStats {
-	totalTasks: number
-	completedTasks: number
-	pendingTasks: number
-	overdueTasks: number
-	progressPercentage: number
-	recentActivity: number
-	totalComments: number
-	totalFiles: number
-}
-
 export default function ProjectDetailPage() {
 	const params = useParams()
 	const router = useRouter()
 	const { toast } = useToast()
 
 	// Estados principales
-	const [project, setProject] = useState<Project | null>(null)
-	const [tasks, setTasks] = useState<Task[]>([])
+	const [project, setProject] = useState<ProjectWithRelations | null>(null)
+	const [tasks, setTasks] = useState<TaskWithRelations[]>([])
 	const [projectStats, setProjectStats] = useState<ProjectStats>({
 		totalTasks: 0,
 		completedTasks: 0,
@@ -168,8 +162,8 @@ export default function ProjectDetailPage() {
 			// Tareas vencidas
 			const now = new Date()
 			const overdueTasks = tasks.filter((t) => {
-				if (!t.dueDate || t.status === 'DONE') return false
-				const dueDate = parseISO(t.dueDate)
+				const { dueDate } = t
+				if (!dueDate || t.status === 'DONE') return false
 				return isValid(dueDate) && dueDate < now
 			}).length
 
@@ -177,8 +171,8 @@ export default function ProjectDetailPage() {
 			const sevenDaysAgo = new Date()
 			sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 			const recentActivity = tasks.filter((t) => {
-				const updatedDate = parseISO(t.updatedAt)
-				return isValid(updatedDate) && updatedDate > sevenDaysAgo
+				const { updatedAt } = t
+				return isValid(updatedAt) && updatedAt > sevenDaysAgo
 			}).length
 
 			const progressPercentage =
@@ -312,17 +306,12 @@ export default function ProjectDetailPage() {
 		)
 	}
 
-	const statusInfo = statusConfig[project.status as keyof typeof statusConfig]
-	const priorityInfo =
-		priorityConfig[project.priority as keyof typeof priorityConfig]
+	const statusInfo = statusConfig['ACTIVE']
+	const priorityInfo = priorityConfig['LOW']
 	const StatusIcon = statusInfo.icon
 
-	const endDate = project.endDate ? parseISO(project.endDate) : null
-	const isOverdue =
-		endDate &&
-		isValid(endDate) &&
-		endDate < new Date() &&
-		project.status !== 'COMPLETED'
+	const endDate = project.updatedAt
+	const isOverdue = endDate && isValid(endDate) && endDate < new Date()
 	const daysUntilDue =
 		endDate && isValid(endDate) ? differenceInDays(endDate, new Date()) : null
 
@@ -489,13 +478,9 @@ export default function ProjectDetailPage() {
 									key={member.id}
 									className="h-6 w-6 border-2 border-background"
 								>
-									{member.avatar ? (
-										<AvatarImage src={member.avatar} />
-									) : (
-										<AvatarFallback className="text-xs">
-											{member.name?.charAt(0).toUpperCase()}
-										</AvatarFallback>
-									)}
+									<AvatarFallback className="text-xs">
+										{member.role?.charAt(0).toUpperCase()}
+									</AvatarFallback>
 								</Avatar>
 							))}
 							{(project.members?.length || 0) > 4 && (

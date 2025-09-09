@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Task, User, Comment } from '@/types'
+import { Task, TaskWithRelations } from '@/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -23,23 +23,17 @@ import {
 	Edit,
 	Trash2,
 } from 'lucide-react'
-import { format, isValid, parseISO } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { TaskDetailDialog } from './TaskDetailDialog'
 
 interface TaskCardProps {
-	task: Task & {
-		assignee?: User
-		comments?: Comment[]
-		_count?: {
-			comments: number
-			attachments: number
-		}
-	}
+	task: TaskWithRelations
 	onEdit?: (task: Task) => void
 	onDelete?: (taskId: string) => void
 	onMove?: (taskId: string, newStatus: string) => void
+	onDragStart?: (e: React.DragEvent, taskId: string) => void
 	className?: string
 }
 
@@ -55,11 +49,13 @@ export function TaskCard({
 	onEdit,
 	onDelete,
 	onMove,
+	onDragStart,
+
 	className,
 }: TaskCardProps) {
 	const [showDetails, setShowDetails] = useState(false)
 
-	const dueDate = task.dueDate ? parseISO(task.dueDate) : null
+	const dueDate = task.dueDate
 	const isOverdue =
 		dueDate &&
 		isValid(dueDate) &&
@@ -76,6 +72,21 @@ export function TaskCard({
 			return
 		}
 		setShowDetails(true)
+	}
+
+	const getHoursBetweenTaskAndNow = () => {
+		const now = new Date()
+
+		// Get the task due date (assuming task.dueDate is a Date object or date string)
+		if (!dueDate || !isValid(dueDate)) return null
+
+		// Calculate the difference in milliseconds
+		const timeDifference = dueDate.getTime() - now.getTime()
+
+		// Convert milliseconds to hours (1 hour = 3,600,000 milliseconds)
+		const hours = timeDifference / (1000 * 60 * 60)
+
+		return hours
 	}
 
 	return (
@@ -132,22 +143,6 @@ export function TaskCard({
 				</CardHeader>
 
 				<CardContent className="pt-0">
-					{/* Tags */}
-					{task.tags && task.tags.length > 0 && (
-						<div className="flex flex-wrap gap-1 mb-3">
-							{task.tags.slice(0, 2).map((tag) => (
-								<Badge key={tag} variant="secondary" className="text-xs py-0">
-									{tag}
-								</Badge>
-							))}
-							{task.tags.length > 2 && (
-								<Badge variant="secondary" className="text-xs py-0">
-									+{task.tags.length - 2}
-								</Badge>
-							)}
-						</div>
-					)}
-
 					{/* Due Date */}
 					{dueDate && isValid(dueDate) && (
 						<div
@@ -188,18 +183,18 @@ export function TaskCard({
 
 						<div className="flex items-center gap-2">
 							{/* Comments count */}
-							{(task._count?.comments || 0) > 0 && (
+							{(task.comments?.length || 0) > 0 && (
 								<div className="flex items-center gap-1 text-xs text-muted-foreground">
 									<MessageCircle className="h-3 w-3" />
-									<span>{task._count?.comments}</span>
+									<span>{task?.comments?.length}</span>
 								</div>
 							)}
 
 							{/* Attachments count */}
-							{(task._count?.attachments || 0) > 0 && (
+							{(task.attachments?.length || 0) > 0 && (
 								<div className="flex items-center gap-1 text-xs text-muted-foreground">
 									<Paperclip className="h-3 w-3" />
-									<span>{task._count?.attachments}</span>
+									<span>{task.attachments?.length}</span>
 								</div>
 							)}
 
@@ -222,16 +217,16 @@ export function TaskCard({
 					</div>
 
 					{/* Time tracking */}
-					{task.estimatedHours && (
+					{task.dueDate && (
 						<div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
 							<Clock className="h-3 w-3" />
-							<span>{task.estimatedHours}h estimadas</span>
+							<span>{getHoursBetweenTaskAndNow()}h estimadas</span>
 						</div>
 					)}
 				</CardContent>
 			</Card>
 
-			{/* Task Detail Dialog */}
+			{/* Task Detail Dialog
 			<TaskDetailDialog
 				task={task}
 				open={showDetails}
@@ -240,6 +235,7 @@ export function TaskCard({
 				onDelete={onDelete}
 				onMove={onMove}
 			/>
+			 */}
 		</>
 	)
 }

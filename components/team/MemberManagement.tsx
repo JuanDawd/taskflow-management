@@ -56,7 +56,7 @@ import { MemberInvite, memberInviteSchema } from '@/lib/validation'
 import { z } from 'zod'
 
 interface TeamMember extends User {
-	role: 'ADMIN' | 'MEMBER' | 'VIEWER'
+	role: 'ADMIN' | 'MEMBER'
 	joinedAt: string
 	projects?: Project[]
 }
@@ -66,13 +66,12 @@ interface MemberManagementProps {
 	projects: Project[]
 	onInviteMember: (data: MemberInvite) => Promise<void>
 	onRemoveMember: (memberId: string) => Promise<void>
-	currentUserRole: 'ADMIN' | 'MEMBER' | 'VIEWER'
+	currentUserRole: 'ADMIN' | 'MEMBER' 
 }
 
 const roleConfig = {
 	ADMIN: { label: 'Administrador', icon: Crown, color: 'bg-purple-500' },
 	MEMBER: { label: 'Miembro', icon: UserIcon, color: 'bg-blue-500' },
-	VIEWER: { label: 'Visualizador', icon: Eye, color: 'bg-gray-500' },
 }
 
 export function MemberManagement({
@@ -191,7 +190,6 @@ export function MemberManagement({
 										<SelectContent>
 											<SelectItem value="ADMIN">Administrador</SelectItem>
 											<SelectItem value="MEMBER">Miembro</SelectItem>
-											<SelectItem value="VIEWER">Visualizador</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>

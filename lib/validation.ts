@@ -1,171 +1,436 @@
 import { z } from 'zod'
 
-export const projectSchema = z.object({
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+export const UserRoleSchema = z.enum(['ADMIN', 'USER'])
+
+export const ProjectRoleSchema = z.enum(['ADMIN', 'MEMBER'])
+
+export const TaskStatusSchema = z.enum([
+	'BACKLOG',
+	'TODO',
+	'IN_PROGRESS',
+	'IN_REVIEW',
+	'DONE',
+])
+
+export const TaskPrioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+
+// =============================================================================
+// BASE SCHEMAS
+// =============================================================================
+
+export const CompanySchema = z.object({
+	id: z.cuid(),
 	name: z
 		.string()
-		.min(1, 'El nombre es requerido')
-		.max(100, 'Nombre muy largo'),
-	description: z.string().max(500, 'Descripción muy larga').optional(),
+		.min(1, 'Company name is required')
+		.max(100, 'Company name must be less than 100 characters'),
 	slug: z
 		.string()
-		.min(1, 'El slug es requerido')
-		.max(50, 'Slug muy largo')
+		.min(1, 'Slug is required')
 		.regex(
 			/^[a-z0-9-]+$/,
-			'El slug solo puede contener letras minúsculas, números y guiones',
+			'Slug must contain only lowercase letters, numbers, and hyphens',
+		),
+	logo: z.url('Invalid logo URL').optional().nullable(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+})
+
+export const UserSchema = z.object({
+	id: z.cuid(),
+	email: z.email('Invalid email address'),
+	name: z
+		.string()
+		.min(1, 'Name is required')
+		.max(100, 'Name must be less than 100 characters'),
+	avatar: z.url('Invalid avatar URL').optional().nullable(),
+	role: UserRoleSchema,
+	password: z.string().min(8, 'Password must be at least 8 characters'),
+	companyId: z.cuid(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+})
+
+export const TeamMemberSchema = z.object({
+	id: z.cuid(),
+	role: ProjectRoleSchema,
+	userId: z.cuid(),
+	companyId: z.cuid(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+})
+
+export const ProjectSchema = z.object({
+	id: z.cuid(),
+	name: z
+		.string()
+		.min(1, 'Project name is required')
+		.max(100, 'Project name must be less than 100 characters'),
+	description: z
+		.string()
+		.max(500, 'Description must be less than 500 characters')
+		.optional()
+		.nullable(),
+	slug: z
+		.string()
+		.min(1, 'Slug is required')
+		.regex(
+			/^[a-z0-9-]+$/,
+			'Slug must contain only lowercase letters, numbers, and hyphens',
 		),
 	color: z
 		.string()
-		.regex(/^#[0-9A-F]{6}$/i, 'Color inválido')
-		.optional()
-		.default('#3B82F6'),
-	memberIds: z.array(z.string().cuid()).optional(),
+		.regex(
+			/^#[0-9A-F]{6}$/i,
+			'Invalid color format. Must be a valid hex color',
+		),
+	companyId: z.cuid(),
+	ownerId: z.cuid(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
 })
 
-export type Project = z.infer<typeof projectSchema>
+export const ProjectMemberSchema = z.object({
+	id: z.cuid(),
+	role: ProjectRoleSchema,
+	userId: z.cuid(),
+	projectId: z.cuid(),
+	joinedAt: z.date(),
+})
 
-export const taskSchema = z.object({
+export const TaskSchema = z.object({
+	id: z.cuid(),
 	title: z
 		.string()
-		.min(1, 'El título es requerido')
-		.max(200, 'Título muy largo'),
-	description: z.string().max(1000, 'Descripción muy larga').optional(),
-	status: z
-		.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'])
-		.default('BACKLOG')
-		.optional(),
-	priority: z
-		.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
-		.default('MEDIUM')
-		.optional(),
-	projectId: z.cuid('ID de proyecto inválido'),
-	assigneeId: z.cuid('ID de asignado inválido').optional(),
-	dueDate: z.iso.datetime().optional().or(z.date().optional()),
-})
-
-export type TaskType = z.infer<typeof taskSchema>
-
-export const userSchema = z.object({
-	name: z
+		.min(1, 'Task title is required')
+		.max(200, 'Task title must be less than 200 characters'),
+	description: z
 		.string()
-		.min(1, 'El nombre es requerido')
-		.max(100, 'Nombre muy largo'),
-	email: z.email('Email inválido'),
-	password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
-	role: z.enum(['ADMIN', 'USER']).default('USER'),
+		.max(1000, 'Description must be less than 1000 characters')
+		.optional()
+		.nullable(),
+	status: TaskStatusSchema,
+	priority: TaskPrioritySchema,
+	dueDate: z.date().optional().nullable(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+	projectId: z.cuid(),
+	assigneeId: z.cuid().optional().nullable(),
+	createdById: z.cuid(),
 })
 
-export const commentSchema = z.object({
+export const TaskCommentSchema = z.object({
+	id: z.cuid(),
 	content: z
 		.string()
-		.min(1, 'El contenido es requerido')
-		.max(1000, 'Contenido muy largo'),
-	taskId: z.string().cuid('ID de tarea inválido'),
+		.min(1, 'Comment content is required')
+		.max(500, 'Comment must be less than 500 characters'),
+	taskId: z.cuid(),
+	userId: z.cuid(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
 })
 
-export const userProfileSchema = z.object({
+export const TaskAttachmentSchema = z.object({
+	id: z.cuid(),
+	filename: z.string().min(1, 'Filename is required'),
+	fileUrl: z.url('Invalid file URL'),
+	fileSize: z.number().positive('File size must be positive'),
+	mimeType: z.string().min(1, 'MIME type is required'),
+	taskId: z.cuid(),
+	uploadedAt: z.date(),
+})
+
+// =============================================================================
+// CREATE SCHEMAS (for forms/registration)
+// =============================================================================
+
+export const CreateCompanySchema = CompanySchema.pick({
+	name: true,
+	slug: true,
+	logo: true,
+})
+
+export const RegisterUserSchema = z
+	.object({
+		email: z.email('Invalid email address'),
+		name: z
+			.string()
+			.min(1, 'Name is required')
+			.max(100, 'Name must be less than 100 characters'),
+		password: z.string().min(8, 'Password must be at least 8 characters'),
+		confirmPassword: z
+			.string()
+			.min(8, 'Confirm password must be at least 8 characters'),
+		avatar: z.url('Invalid avatar URL').optional(),
+		role: UserRoleSchema.optional().default('USER'),
+		companyId: z.cuid(),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: 'Passwords do not match',
+		path: ['confirmPassword'],
+	})
+
+export const LoginUserSchema = z.object({
+	email: z.email('Invalid email address'),
+	password: z.string().min(1, 'Password is required'),
+})
+
+export const CreateProjectSchema = ProjectSchema.pick({
+	name: true,
+	description: true,
+	slug: true,
+	color: true,
+}).extend({
+	companyId: z.cuid().optional(), // May be set from context
+	ownerId: z.cuid().optional(), // May be set from auth context
+	id: z.cuid().optional(), // For editing existing projects
+})
+
+export const CreateTaskSchema = TaskSchema.pick({
+	title: true,
+	description: true,
+	priority: true,
+	dueDate: true,
+}).extend({
+	projectId: z.cuid(),
+	assigneeId: z.cuid().optional(),
+	status: TaskStatusSchema.optional().default('BACKLOG'),
+})
+
+export const CreateTaskCommentSchema = TaskCommentSchema.pick({
+	content: true,
+}).extend({
+	taskId: z.cuid(),
+})
+
+export const CreateTeamMemberSchema = z.object({
+	userId: z.cuid(),
+	companyId: z.cuid(),
+	role: ProjectRoleSchema.optional().default('MEMBER'),
+})
+
+export const CreateProjectMemberSchema = z.object({
+	userId: z.cuid(),
+	projectId: z.cuid(),
+	role: ProjectRoleSchema.optional().default('MEMBER'),
+})
+
+// =============================================================================
+// UPDATE SCHEMAS
+// =============================================================================
+
+export const UpdateCompanySchema = CreateCompanySchema.partial()
+
+export const UpdateUserSchema = z.object({
+	email: z.email('Invalid email address').optional(),
 	name: z
 		.string()
-		.min(1, 'El nombre es requerido')
-		.max(100, 'Máximo 100 caracteres'),
-	email: z.email('Email inválido'),
-	avatar: z.url('URL inválida').optional(),
-	bio: z.string().max(500, 'Máximo 500 caracteres').optional(),
-	timezone: z.string().optional(),
-	notifications: z
-		.object({
-			email: z.boolean().default(true),
-			push: z.boolean().default(true),
-			taskAssigned: z.boolean().default(true),
-			taskCompleted: z.boolean().default(true),
-			comments: z.boolean().default(true),
-		})
-		.default({
-			email: true,
-			push: true,
-			taskAssigned: true,
-			taskCompleted: true,
-			comments: true,
-		}),
-})
-export type UserProfile = z.infer<typeof userProfileSchema>
-
-export const companySchema = z.object({
-	name: z
-		.string()
-		.min(1, 'El nombre es requerido')
-		.max(100, 'Nombre muy largo'),
-	slug: z
-		.string()
-		.min(1, 'El slug es requerido')
-		.max(50, 'Slug muy largo')
-		.regex(
-			/^[a-z0-9-]+$/,
-			'El slug solo puede contener letras minúsculas, números y guiones',
-		),
-	logo: z.url('URL de logo inválida').optional(),
-})
-
-export type CompanyType = z.infer<typeof companySchema>
-
-export const memberInviteSchema = z.object({
-	email: z.email('Email inválido'),
-	role: z.enum(['ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
-	projectIds: z.array(z.string()).default([]),
-})
-
-export type MemberInvite = z.infer<typeof memberInviteSchema>
-
-export const loginSchema = z.object({
-	email: z.email('Email inválido'),
-	password: z.string().min(1, 'La contraseña es requerida'),
-})
-
-export const registerSchema = z.object({
-	name: z
-		.string()
-		.min(1, 'El nombre es requerido')
-		.max(100, 'Nombre muy largo'),
-	email: z.email('Email inválido'),
-	password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
-	companyName: z
-		.string()
-		.min(1, 'El nombre de empresa es requerido')
-		.max(100, 'Nombre muy largo'),
-	companySlug: z
-		.string()
-		.min(1, 'El slug de empresa es requerido')
-		.max(50, 'Slug muy largo')
-		.regex(
-			/^[a-z0-9-]+$/,
-			'El slug solo puede contener letras minúsculas, números y guiones',
-		),
-})
-
-export const teamMemberSchema = z.object({
-	userId: z.cuid('ID de usuario inválido'),
-	role: z.enum(['ADMIN', 'MEMBER']).default('MEMBER'),
-})
-
-export const taskStatusSchema = z.object({
-	status: z.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']),
-})
-
-export const paginationSchema = z.object({
-	page: z.coerce.number().min(1).default(1),
-	limit: z.coerce.number().min(1).max(100).default(10),
-	search: z.string().optional(),
-	status: z
-		.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'])
+		.min(1, 'Name is required')
+		.max(100, 'Name must be less than 100 characters')
 		.optional(),
-	priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
-	assigneeId: z.string().cuid().optional(),
+	avatar: z.url('Invalid avatar URL').optional().nullable(),
+	role: UserRoleSchema.optional(),
+	password: z
+		.string()
+		.min(8, 'Password must be at least 8 characters')
+		.optional(),
 })
 
-export type PasswordUpdate = {
-	currentPassword: string
-	newPassword: string
-}
+export const UpdateProjectSchema = CreateProjectSchema.partial()
+
+export const UpdateTaskSchema = z.object({
+	title: z
+		.string()
+		.min(1, 'Task title is required')
+		.max(200, 'Task title must be less than 200 characters')
+		.optional(),
+	description: z
+		.string()
+		.max(1000, 'Description must be less than 1000 characters')
+		.optional()
+		.nullable(),
+	status: TaskStatusSchema.optional(),
+	priority: TaskPrioritySchema.optional(),
+	dueDate: z.date().optional().nullable(),
+	assigneeId: z.cuid().optional().nullable(),
+})
+
+export const UpdateTaskCommentSchema = z.object({
+	content: z
+		.string()
+		.min(1, 'Comment content is required')
+		.max(500, 'Comment must be less than 500 characters'),
+})
+
+export const UpdateTeamMemberSchema = z.object({
+	role: ProjectRoleSchema,
+})
+
+export const UpdateProjectMemberSchema = z.object({
+	role: ProjectRoleSchema,
+})
+
+// =============================================================================
+// QUERY/FILTER SCHEMAS
+// =============================================================================
+
+export const TaskFilterSchema = z.object({
+	status: TaskStatusSchema.optional(),
+	priority: TaskPrioritySchema.optional(),
+	assigneeId: z.cuid().optional(),
+	projectId: z.cuid().optional(),
+	search: z.string().optional(),
+	dueBefore: z.date().optional(),
+	dueAfter: z.date().optional(),
+})
+
+export const ProjectFilterSchema = z.object({
+	companyId: z.cuid().optional(),
+	ownerId: z.cuid().optional(),
+	search: z.string().optional(),
+})
+
+export const UserFilterSchema = z.object({
+	role: UserRoleSchema.optional(),
+	companyId: z.cuid().optional(),
+	search: z.string().optional(),
+})
+
+// =============================================================================
+// PAGINATION SCHEMAS
+// =============================================================================
+
+export const PaginationSchema = z.object({
+	page: z.number().int().positive().default(1),
+	limit: z.number().int().positive().max(100).default(10),
+	sortBy: z.string().optional(),
+	sortOrder: z.enum(['asc', 'desc']).default('desc'),
+})
+
+// =============================================================================
+// RESPONSE SCHEMAS (for API responses)
+// =============================================================================
+
+export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(
+	itemSchema: T,
+) =>
+	z.object({
+		data: z.array(itemSchema),
+		pagination: z.object({
+			page: z.number(),
+			limit: z.number(),
+			total: z.number(),
+			totalPages: z.number(),
+			hasNext: z.boolean(),
+			hasPrev: z.boolean(),
+		}),
+	})
+
+export const ApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+	z.object({
+		success: z.boolean(),
+		data: dataSchema.optional(),
+		error: z.string().optional(),
+		message: z.string().optional(),
+	})
+
+// =============================================================================
+// EXTENDED SCHEMAS WITH RELATIONS (for API responses with populated data)
+// =============================================================================
+
+export const CompanyWithUsersSchema = CompanySchema.extend({
+	users: z.array(UserSchema).optional(),
+	projects: z.array(ProjectSchema).optional(),
+	teamMembers: z.array(TeamMemberSchema).optional(),
+})
+
+export const UserWithRelationsSchema = UserSchema.extend({
+	company: CompanySchema.optional(),
+	assignedTasks: z.array(TaskSchema).optional(),
+	createdTasks: z.array(TaskSchema).optional(),
+	comments: z.array(TaskCommentSchema).optional(),
+	projectMembers: z.array(ProjectMemberSchema).optional(),
+	ownedProjects: z.array(ProjectSchema).optional(),
+	teamMember: TeamMemberSchema.optional(),
+})
+
+export const ProjectWithRelationsSchema = ProjectSchema.extend({
+	company: CompanySchema.optional(),
+	owner: UserSchema.optional(),
+	tasks: z.array(TaskSchema).optional(),
+	members: z.array(ProjectMemberSchema).optional(),
+})
+
+export const TaskWithRelationsSchema = TaskSchema.extend({
+	project: ProjectSchema.optional(),
+	assignee: UserSchema.optional(),
+	createdBy: UserSchema.optional(),
+	comments: z.array(TaskCommentSchema).optional(),
+	attachments: z.array(TaskAttachmentSchema).optional(),
+})
+
+// =============================================================================
+// UTILITY SCHEMAS
+// =============================================================================
+
+export const IdSchema = z.object({
+	id: z.cuid(),
+})
+
+export const SlugSchema = z.object({
+	slug: z.string().min(1),
+})
+
+export const CompanySlugSchema = z.object({
+	companySlug: z.string().min(1),
+})
+
+export const ProjectSlugSchema = z.object({
+	projectSlug: z.string().min(1),
+})
+
+// =============================================================================
+// FILE UPLOAD SCHEMAS
+// =============================================================================
+
+export const FileUploadSchema = z.object({
+	file: z
+		.instanceof(File, { message: 'File is required' })
+		.refine(
+			(file) => file.size <= 10 * 1024 * 1024,
+			'File size must be less than 10MB',
+		)
+		.refine(
+			(file) =>
+				[
+					'image/jpeg',
+					'image/png',
+					'image/gif',
+					'application/pdf',
+					'text/plain',
+				].includes(file.type),
+			'Invalid file type. Allowed types: JPEG, PNG, GIF, PDF, TXT',
+		),
+	taskId: z.cuid(),
+})
+
+// =============================================================================
+// BULK OPERATIONS SCHEMAS
+// =============================================================================
+
+export const BulkUpdateTasksSchema = z.object({
+	taskIds: z.array(z.cuid()).min(1, 'At least one task ID is required'),
+	updates: UpdateTaskSchema.partial(),
+})
+
+export const BulkDeleteSchema = z.object({
+	ids: z.array(z.cuid()).min(1, 'At least one ID is required'),
+})
 
 // Error handling utilities
 export class AppError extends Error {

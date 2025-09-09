@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { taskSchema } from '@/lib/validation'
 import { z } from 'zod'
-import jwt from 'jsonwebtoken'
-import { JWTPayload } from '@/types'
+import { getToken } from 'next-auth/jwt'
+import { UpdateTaskSchema } from '@/lib/validation'
 
 interface Context {
 	params: Promise<{ id: string }>
@@ -82,7 +81,7 @@ export async function PUT(request: NextRequest, { params }: Context) {
 		}
 
 		const body = await request.json()
-		const validatedData = taskSchema.partial().parse(body)
+		const validatedData = UpdateTaskSchema.parse(body)
 
 		const { id } = await params
 
@@ -147,18 +146,16 @@ export async function PUT(request: NextRequest, { params }: Context) {
 
 export async function PATCH(request: NextRequest, { params }: Context) {
 	try {
-		const token = request.cookies.get('auth-token')?.value
-
-		if (!token) {
-			return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-		}
-
-		const decoded = jwt.verify(
-			token,
-			process.env.JWT_SECRET || 'fallback-secret',
-		) as JWTPayload
-		const userId = decoded.userId
-		const userRole = decoded.role
+				const token = await getToken({
+					req: request,
+					secret: process.env.NEXTAUTH_SECRET,
+				})
+		
+				if (!token) {
+					return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+				}
+		const userId = token.id
+		const userRole = token.role
 
 		const { id } = await params
 		const updateData = await request.json()

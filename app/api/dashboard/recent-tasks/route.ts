@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
-import { JWTPayload } from '@/types'
+import { getToken } from 'next-auth/jwt'
 
 export async function GET(request: NextRequest) {
 	try {
-		const token = request.cookies.get('auth-token')?.value
+		const token = await getToken({
+			req: request,
+			secret: process.env.NEXTAUTH_SECRET,
+		})
 
 		if (!token) {
 			return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 		}
-
-		const decoded = jwt.verify(
-			token,
-			process.env.JWT_SECRET || 'fallback-secret',
-		) as JWTPayload
-		const companyId = decoded.companyId
+		const companyId = token.companyId
 
 		const tasks = await db.task.findMany({
 			where: {

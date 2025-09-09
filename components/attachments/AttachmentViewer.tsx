@@ -71,6 +71,7 @@ export function AttachmentViewer({
 			a.click()
 			window.URL.revokeObjectURL(url)
 			document.body.removeChild(a)
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			toast({
 				title: 'Error',
@@ -88,6 +89,7 @@ export function AttachmentViewer({
 					title: 'Archivo eliminado',
 					description: 'El archivo se ha eliminado exitosamente',
 				})
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (error) {
 				toast({
 					title: 'Error',

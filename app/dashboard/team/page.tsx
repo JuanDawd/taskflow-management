@@ -2,33 +2,28 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { User, Project } from '@/types'
+import { Project, TeamMember } from '@/types'
 import { MemberManagement } from '@/components/team/MemberManagement'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
-import { MemberInvite } from '@/lib/validation'
-
-interface TeamMember extends User {
-	role: 'ADMIN' | 'MEMBER' | 'VIEWER'
-	joinedAt: string
-	projects?: Project[]
-}
+import { User, UserRole } from '@prisma/client'
 
 export default function TeamPage() {
 	const { data: session } = useSession()
 	const { toast } = useToast()
 	const [members, setMembers] = useState<TeamMember[]>([])
 	const [projects, setProjects] = useState<Project[]>([])
-	const [currentUserRole, setCurrentUserRole] = useState<
-		'ADMIN' | 'MEMBER' | 'VIEWER'
-	>('MEMBER')
+	const [currentUserRole, setCurrentUserRole] = useState<User['role']>(
+		UserRole.USER,
+	)
 
 	const { loading, execute } = useApi<TeamMember[]>()
 
 	useEffect(() => {
 		loadMembers()
 		loadProjects()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
 	const loadMembers = async () => {
@@ -49,6 +44,7 @@ export default function TeamPage() {
 
 				return data
 			})
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
 			toast({
 				title: 'Error',
@@ -143,10 +139,10 @@ export default function TeamPage() {
 				title: 'Miembro eliminado',
 				description: 'El miembro ha sido eliminado del equipo',
 			})
-		} catch (error: any) {
+		} catch (error) {
 			toast({
 				title: 'Error',
-				description: error.message,
+				description: error,
 				variant: 'destructive',
 			})
 		}

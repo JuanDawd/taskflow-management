@@ -1,7 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Project, User } from '@/types'
+import {
+	CreateProjectForm,
+	ProjectWithRelations,
+	UpdateProjectForm,
+	User,
+} from '@/types'
 import {
 	Dialog,
 	DialogContent,
@@ -14,33 +19,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Calendar } from '@/components/ui/calendar'
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover'
-import { CalendarIcon, X, Users } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
-import { projectSchema } from '@/lib/validation'
+
 import { z } from 'zod'
+import { toast } from '@/hooks/use-toast'
+import { CreateProjectSchema } from '@/lib/validation'
+import { useSession } from 'next-auth/react'
 
 interface ProjectDialogProps {
-	project?: Project & { members?: User[] }
+	project?: ProjectWithRelations
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	onSave: (project: Project) => Promise<void>
+	onSave: (project: CreateProjectForm) => Promise<void>
 	availableMembers?: User[]
 }
 
@@ -49,16 +38,15 @@ export function ProjectDialog({
 	open,
 	onOpenChange,
 	onSave,
-	availableMembers = [],
 }: ProjectDialogProps) {
-	const [formData, setFormData] = useState<Project>({
+	const { data: session } = useSession()
+	const [formData, setFormData] = useState<UpdateProjectForm>({
 		name: '',
 		description: '',
-		status: 'ACTIVE' as const,
-		priority: 'MEDIUM' as const,
-		startDate: '',
-		endDate: '',
-		memberIds: [],
+		slug: '',
+		color: '',
+		companyId: '',
+		ownerId: '',
 	})
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
@@ -67,23 +55,21 @@ export function ProjectDialog({
 	useEffect(() => {
 		if (project) {
 			setFormData({
-				name: project.name || '',
-				description: project.description || '',
-				status: project.status || 'ACTIVE',
-				priority: project.priority || 'MEDIUM',
-				startDate: project.startDate ? new Date(project.startDate) : undefined,
-				endDate: project.endDate ? new Date(project.endDate) : undefined,
-				memberIds: project.members?.map((m) => m.id) || [],
+				name: project.name,
+				description: project.description,
+				slug: project.slug,
+				color: project.color,
+				companyId: project.companyId,
+				ownerId: project.ownerId,
 			})
 		} else {
 			setFormData({
 				name: '',
 				description: '',
-				status: 'ACTIVE',
-				priority: 'MEDIUM',
-				startDate: undefined,
-				endDate: undefined,
-				memberIds: [],
+				slug: '',
+				color: '',
+				companyId: '',
+				ownerId: '',
 			})
 		}
 		setErrors({})
@@ -95,18 +81,18 @@ export function ProjectDialog({
 		setIsLoading(true)
 
 		try {
-			const validatedData = projectSchema.parse({
+			const validatedData = CreateProjectSchema.parse({
+				id: project?.id,
 				name: formData.name,
 				description: formData.description,
-				status: formData.status,
-				priority: formData.priority,
-				startDate: formData.startDate?.toISOString(),
-				endDate: formData.endDate?.toISOString(),
+				slug: formData.slug,
+				color: formData.color,
+				companyId: session?.user.companyId,
+				ownerId: session?.user.id,
 			})
 
 			await onSave({
 				...validatedData,
-				memberIds: formData.memberIds,
 				id: project?.id,
 			})
 
@@ -120,35 +106,33 @@ export function ProjectDialog({
 					}
 				})
 				setErrors(fieldErrors)
+				toast({
+					title: 'Error de validación',
+					description: 'Por favor corrige los errores en el formulario.',
+					variant: 'destructive',
+				})
 			}
 		} finally {
 			setIsLoading(false)
 		}
 	}
 
-	const addMember = (memberId: string) => {
-		if (!formData.memberIds.includes(memberId)) {
-			setFormData({
-				...formData,
-				memberIds: [...formData.memberIds, memberId],
-			})
-		}
-	}
-
-	const removeMember = (memberId: string) => {
-		setFormData({
-			...formData,
-			memberIds: formData.memberIds.filter((id) => id !== memberId),
+	const addMember = async (userId: string) => {
+		await fetch('/api/team/member', {
+			method: 'POST',
 		})
 	}
 
-	const selectedMembers = availableMembers.filter((member) =>
-		formData.memberIds.includes(member.id),
-	)
+	const removeMember = async (memberId: string) => {
+		await fetch(`/api/team/member/${memberId}`, {
+			method: 'DELETE',
+		})
 
-	const unselectedMembers = availableMembers.filter(
-		(member) => !formData.memberIds.includes(member.id),
-	)
+		toast({
+			title: 'Miembro eliminado',
+			description: 'El miembro ha sido eliminado del equipo',
+		})
+	}
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -187,7 +171,7 @@ export function ProjectDialog({
 							<Label htmlFor="description">Descripción</Label>
 							<Textarea
 								id="description"
-								value={formData.description}
+								value={formData.description ?? ''}
 								onChange={(e) =>
 									setFormData({ ...formData, description: e.target.value })
 								}
@@ -200,124 +184,48 @@ export function ProjectDialog({
 								</p>
 							)}
 						</div>
-					</div>
 
-					{/* Status and Priority */}
-					<div className="grid grid-cols-2 gap-4">
 						<div>
-							<Label>Estado</Label>
-							<Select
-								value={formData.status}
-								onValueChange={(value: any) =>
-									setFormData({ ...formData, status: value })
+							<Label htmlFor="slug">Slug del proyecto *</Label>
+							<Input
+								id="slug"
+								value={formData.slug}
+								onChange={(e) =>
+									setFormData({ ...formData, slug: e.target.value })
 								}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="ACTIVE">Activo</SelectItem>
-									<SelectItem value="COMPLETED">Completado</SelectItem>
-									<SelectItem value="ARCHIVED">Archivado</SelectItem>
-								</SelectContent>
-							</Select>
+								className={errors.slug ? 'border-red-500' : ''}
+								placeholder="Ej: www.miproyecto.com"
+							/>
+							{errors.slug && (
+								<p className="text-sm text-red-500 mt-1">{errors.slug}</p>
+							)}
 						</div>
 
 						<div>
-							<Label>Prioridad</Label>
-							<Select
-								value={formData.priority}
-								onValueChange={(value: any) =>
-									setFormData({ ...formData, priority: value })
+							<Label htmlFor="color">Nombre del proyecto *</Label>
+							<Input
+								id="color"
+								value={formData.color}
+								onChange={(e) =>
+									setFormData({ ...formData, color: e.target.value })
 								}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="LOW">Baja</SelectItem>
-									<SelectItem value="MEDIUM">Media</SelectItem>
-									<SelectItem value="HIGH">Alta</SelectItem>
-									<SelectItem value="URGENT">Urgente</SelectItem>
-								</SelectContent>
-							</Select>
+								className={errors.color ? 'border-red-500' : ''}
+								placeholder="Ej: hex, rgb, etc."
+							/>
+							{errors.color && (
+								<p className="text-sm text-red-500 mt-1">{errors.color}</p>
+							)}
 						</div>
 					</div>
-
-					{/* Dates */}
-					<div className="grid grid-cols-2 gap-4">
-						<div>
-							<Label>Fecha de inicio</Label>
-							<Popover>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										className={cn(
-											'w-full justify-start text-left font-normal',
-											!formData.startDate && 'text-muted-foreground',
-										)}
-									>
-										<CalendarIcon className="mr-2 h-4 w-4" />
-										{formData.startDate
-											? format(formData.startDate, 'PPP', { locale: es })
-											: 'Seleccionar fecha'}
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0">
-									<Calendar
-										mode="single"
-										selected={formData.startDate}
-										onSelect={(date) =>
-											setFormData({ ...formData, startDate: date })
-										}
-										initialFocus
-									/>
-								</PopoverContent>
-							</Popover>
-						</div>
-
-						<div>
-							<Label>Fecha de finalización</Label>
-							<Popover>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										className={cn(
-											'w-full justify-start text-left font-normal',
-											!formData.endDate && 'text-muted-foreground',
-										)}
-									>
-										<CalendarIcon className="mr-2 h-4 w-4" />
-										{formData.endDate
-											? format(formData.endDate, 'PPP', { locale: es })
-											: 'Seleccionar fecha'}
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0">
-									<Calendar
-										mode="single"
-										selected={formData.endDate}
-										onSelect={(date) =>
-											setFormData({ ...formData, endDate: date })
-										}
-										initialFocus
-										disabled={(date) =>
-											formData.startDate ? date < formData.startDate : false
-										}
-									/>
-								</PopoverContent>
-							</Popover>
-						</div>
-					</div>
-
-					{/* Team Members */}
+					{/*
+					 Team Members 
 					<div>
 						<Label className="flex items-center gap-2">
 							<Users className="h-4 w-4" />
 							Miembros del equipo
 						</Label>
 
-						{/* Selected Members */}
+						 Selected Members
 						{selectedMembers.length > 0 && (
 							<div className="flex flex-wrap gap-2 mt-2 mb-3">
 								{selectedMembers.map((member) => (
@@ -349,7 +257,7 @@ export function ProjectDialog({
 							</div>
 						)}
 
-						{/* Add Members */}
+						Add Members 
 						{unselectedMembers.length > 0 && (
 							<Select onValueChange={addMember}>
 								<SelectTrigger>
@@ -379,9 +287,9 @@ export function ProjectDialog({
 									))}
 								</SelectContent>
 							</Select>
-						)}
+						)} 
 					</div>
-
+					*/}
 					<DialogFooter>
 						<Button
 							type="button"

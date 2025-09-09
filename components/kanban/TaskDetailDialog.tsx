@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Task, User, Comment } from '@/types'
+import { Task, TaskComment, TaskWithRelations, User } from '@/types'
 import {
 	Dialog,
 	DialogContent,
@@ -21,26 +21,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
-import {
-	Calendar,
-	MessageCircle,
-	Send,
-	Edit,
-	Save,
-	X,
-} from 'lucide-react'
+import { Calendar, MessageCircle, Send, Edit, Save, X } from 'lucide-react'
 import { format, isValid, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 interface TaskDetailDialogProps {
-	task: Task & {
-		assignee?: User
-		comments?: Comment[]
-		_count?: {
-			comments: number
-			attachments: number
-		}
-	}
+	task: TaskWithRelations
 	open: boolean
 	onOpenChange: (open: boolean) => void
 	onEdit?: (task: Task) => void
@@ -57,7 +43,7 @@ export function TaskDetailDialog({
 	const [isEditing, setIsEditing] = useState(false)
 	const [editedTask, setEditedTask] = useState(task)
 	const [newComment, setNewComment] = useState('')
-	const [comments, setComments] = useState<Comment[]>(task.comments || [])
+	const [comments, setComments] = useState<TaskComment[]>(task.comments || [])
 
 	useEffect(() => {
 		setEditedTask(task)
@@ -165,7 +151,6 @@ export function TaskDetailDialog({
 								</div>
 							)}
 						</div>
-
 					</div>
 
 					{/* Due Date and Assignee */}
