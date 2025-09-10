@@ -12,7 +12,13 @@ interface KanbanBoardProps {
 	projectId?: string
 }
 
-const COLUMNS = [
+type KanbanBoardColumns = {
+	id: Task['status']
+	title: string
+	color: string
+}
+
+const COLUMNS: KanbanBoardColumns[] = [
 	{ id: 'BACKLOG', title: 'Backlog', color: 'bg-gray-100' },
 	{ id: 'TODO', title: 'Por Hacer', color: 'bg-blue-100' },
 	{ id: 'IN_PROGRESS', title: 'En Progreso', color: 'bg-yellow-100' },
@@ -56,7 +62,12 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 		e.dataTransfer.dropEffect = 'move'
 	}
 
-	const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+	const handleDragEnd = (e: React.DragEvent) => {
+		;(e.currentTarget as HTMLElement).style.opacity = '1'
+		setDraggedTask(null)
+	}
+
+	const handleDrop = async (e: React.DragEvent, newStatus: Task['status']) => {
 		e.preventDefault()
 
 		if (!draggedTask) return
@@ -69,11 +80,11 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 			})
 
 			if (response.ok) {
-				// setTasks((prevTasks) =>
-				// 	prevTasks.map((task) =>
-				// 		task.id === draggedTask ? { ...task, status: newStatus } : task,
-				// 	),
-				// )
+				setTasks((prevTasks) =>
+					prevTasks.map((task: Task) =>
+						task.id === draggedTask ? { ...task, status: newStatus } : task,
+					),
+				)
 			}
 		} catch (error) {
 			console.error('Error updating task status:', error)
@@ -132,7 +143,12 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 
 						<div className="space-y-3">
 							{getTasksByStatus(column.id).map((task) => (
-								<TaskCard key={task.id} task={task} />
+								<TaskCard
+									key={task.id}
+									task={task}
+									onDragStart={handleDragStart}
+									onDragEnd={handleDragEnd}
+								/>
 							))}
 						</div>
 					</div>

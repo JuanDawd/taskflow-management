@@ -34,6 +34,7 @@ interface TaskCardProps {
 	onDelete?: (taskId: string) => void
 	onMove?: (taskId: string, newStatus: string) => void
 	onDragStart?: (e: React.DragEvent, taskId: string) => void
+	onDragEnd?: (e: React.DragEvent) => void
 	className?: string
 }
 
@@ -50,7 +51,7 @@ export function TaskCard({
 	onDelete,
 	onMove,
 	onDragStart,
-
+	onDragEnd,
 	className,
 }: TaskCardProps) {
 	const [showDetails, setShowDetails] = useState(false)
@@ -104,6 +105,9 @@ export function TaskCard({
 					className,
 				)}
 				onClick={handleCardClick}
+				draggable="true"
+				onDragStart={(e) => onDragStart?.(e, task.id)}
+				onDragEnd={(e) => onDragEnd?.(e)}
 			>
 				<CardHeader className="pb-2">
 					<div className="flex items-start justify-between gap-2">
