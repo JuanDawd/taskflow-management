@@ -144,39 +144,6 @@ export async function PUT(request: NextRequest, { params }: Context) {
 				})
 			}
 
-			// Update project assignments if provided
-			if (projectIds !== undefined) {
-				// Remove existing project assignments
-				await tx.projectMember.deleteMany({
-					where: {
-						userId: updatedMember.userId,
-					},
-				})
-
-				// Add new project assignments
-				if (projectIds.length > 0) {
-					// Validate projects belong to the same company
-					const validProjects = await tx.project.findMany({
-						where: {
-							id: { in: projectIds },
-							companyId: session.user.companyId,
-						},
-					})
-
-					if (validProjects.length !== projectIds.length) {
-						throw new Error('Algunos proyectos no son válidos')
-					}
-
-					await tx.projectMember.createMany({
-						data: projectIds.map((projectId: string) => ({
-							projectId,
-							userId: updatedMember.userId,
-							role: 'MEMBER',
-						})),
-					})
-				}
-			}
-
 			return updatedMember
 		})
 

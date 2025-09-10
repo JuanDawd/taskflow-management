@@ -196,10 +196,11 @@ export const CreateTaskSchema = TaskSchema.pick({
 	description: true,
 	priority: true,
 	dueDate: true,
+	status: true,
 }).extend({
 	projectId: z.cuid(),
 	assigneeId: z.cuid().optional(),
-	status: TaskStatusSchema.optional().default('BACKLOG'),
+	status: TaskStatusSchema,
 })
 
 export const CreateTaskCommentSchema = TaskCommentSchema.pick({

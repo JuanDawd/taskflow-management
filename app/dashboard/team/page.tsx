@@ -67,6 +67,7 @@ export default function TeamPage() {
 	}
 
 	const handleInviteMember = async (inviteData: MemberInvite) => {
+		// email, role userId, companyId
 		try {
 			const response = await fetch('/api/team/members', {
 				method: 'POST',
@@ -177,7 +178,7 @@ export default function TeamPage() {
 			projects={projects}
 			currentUserRole={currentUserRole}
 			onInviteMember={handleInviteMember}
-			// onUpdateMember={handleUpdateMember}
+			onUpdateMember={handleUpdateMember}
 			onRemoveMember={handleRemoveMember}
 		/>
 	)

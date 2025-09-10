@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
-import { PrismaClient } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
 	try {
@@ -36,7 +35,7 @@ export async function POST(request: NextRequest) {
 		const hashedPassword = await bcrypt.hash(password, 12)
 
 		// Crear empresa y usuario en una transacción
-		const result = await db.$transaction(async (tx: PrismaClient) => {
+		const result = await db.$transaction(async (tx) => {
 			// Crear empresa
 			const company = await tx.company.create({
 				data: {

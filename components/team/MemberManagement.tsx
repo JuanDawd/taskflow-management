@@ -58,7 +58,7 @@ interface MemberManagementProps {
 	projects: Project[]
 	onInviteMember: (data: CreateTeamMemberForm) => Promise<void>
 	onRemoveMember: (memberId: string) => Promise<void>
-	currentUserRole: 'ADMIN' | 'MEMBER'
+	currentUserRole: User['role']
 }
 
 const roleConfig = {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CalendarIcon, User } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -42,27 +42,17 @@ import { Calendar } from '@/components/ui/calendar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
-import { taskSchema, TaskType } from '@/lib/validation'
 import { Task } from '@prisma/client'
+import { CreateTaskForm, Project, User } from '@/types'
+import { CreateTaskSchema } from '@/lib/validation'
+import { priorityLabels, statusLabels } from './constants'
 
 interface TaskFormProps {
 	task?: Task
 	projectId?: string
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	onSubmit: (data: TaskType) => Promise<void>
-}
-
-interface User {
-	id: string
-	name: string
-	email: string
-	avatar?: string
-}
-
-interface Project {
-	id: string
-	name: string
+	onSubmit: (data: CreateTaskForm) => Promise<void>
 }
 
 export function TaskForm({
@@ -77,8 +67,8 @@ export function TaskForm({
 	const [projects, setProjects] = useState<Project[]>([])
 	const { toast } = useToast()
 
-	const form = useForm<TaskType>({
-		resolver: zodResolver(taskSchema),
+	const form = useForm<CreateTaskForm>({
+		resolver: zodResolver(CreateTaskSchema),
 		defaultValues: {
 			title: '',
 			description: '',
@@ -133,7 +123,7 @@ export function TaskForm({
 		}
 	}
 
-	const handleSubmit = async (data: TaskType) => {
+	const handleSubmit = async (data: CreateTaskForm) => {
 		try {
 			setIsLoading(true)
 
@@ -161,19 +151,7 @@ export function TaskForm({
 		}
 	}
 
-	const statusLabels = {
-		TODO: 'Por hacer',
-		IN_PROGRESS: 'En progreso',
-		REVIEW: 'En revisión',
-		DONE: 'Completado',
-	}
-
-	const priorityLabels = {
-		LOW: 'Baja',
-		MEDIUM: 'Media',
-		HIGH: 'Alta',
-		URGENT: 'Urgente',
-	}
+	
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -222,6 +200,7 @@ export function TaskForm({
 												placeholder="Describe los detalles de la tarea"
 												className="min-h-[100px]"
 												{...field}
+												value={field.value ?? ''}
 											/>
 										</FormControl>
 										<FormMessage />
@@ -281,13 +260,16 @@ export function TaskForm({
 													<SelectItem key={user.id} value={user.id}>
 														<div className="flex items-center gap-2">
 															<Avatar className="h-6 w-6">
-																<AvatarImage src={user.avatar} />
-																<AvatarFallback className="text-xs">
-																	{user.name
-																		.split(' ')
-																		.map((n) => n[0])
-																		.join('')}
-																</AvatarFallback>
+																{user.avatar ? (
+																	<AvatarImage src={user.avatar} />
+																) : (
+																	<AvatarFallback className="text-xs">
+																		{user.name
+																			.split(' ')
+																			.map((n) => n[0])
+																			.join('')}
+																	</AvatarFallback>
+																)}
 															</Avatar>
 															{user.name}
 														</div>

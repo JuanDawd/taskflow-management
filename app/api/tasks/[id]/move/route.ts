@@ -15,7 +15,7 @@ export async function POST(request: NextRequest, { params }: Context) {
 		}
 
 		const body = await request.json()
-		const { status, position } = body
+		const { status } = body
 
 		const { id } = await params
 
@@ -51,7 +51,6 @@ export async function POST(request: NextRequest, { params }: Context) {
 			where: { id },
 			data: {
 				status,
-				position: position || 0,
 			},
 			include: {
 				assignee: true,

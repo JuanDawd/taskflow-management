@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
+import { CreateTeamMemberSchema } from '@/lib/validation'
 
 export async function GET() {
 	try {
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const validatedData = memberInviteSchema.parse(body)
+		const validatedData = CreateTeamMemberSchema.parse(body)
 
 		// Check if user already exists
 		const existingUser = await db.user.findUnique({
