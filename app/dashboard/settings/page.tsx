@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { UpdatePasswordForm, User } from '@/types'
+import { Company, UpdatePasswordForm, User } from '@/types'
 import { UserSettings } from '@/components/settings/UserSettings'
 import { CompanySettings } from '@/components/settings/CompanySettings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { Building2, User as UserIcon } from 'lucide-react'
-import { Company } from '@prisma/client'
 
 export default function SettingsPage() {
 	const { toast } = useToast()

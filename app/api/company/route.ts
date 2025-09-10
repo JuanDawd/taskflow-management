@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { companySchema } from '@/lib/validation'
 import { z } from 'zod'
+import { UpdateCompanySchema } from '@/lib/validation'
 
 export async function GET() {
 	try {
@@ -17,7 +17,6 @@ export async function GET() {
 			include: {
 				_count: {
 					select: {
-						members: true,
 						projects: true,
 					},
 				},
@@ -65,7 +64,7 @@ export async function PUT(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const validatedData = companySchema.parse(body)
+		const validatedData = UpdateCompanySchema.parse(body)
 
 		const updatedCompany = await db.company.update({
 			where: { id: session.user.companyId },

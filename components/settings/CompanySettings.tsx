@@ -13,12 +13,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Building2, Save, Upload, AlertTriangle } from 'lucide-react'
-import { companySchema, CompanyType } from '@/lib/validation'
 import { z } from 'zod'
+import { Company, UpdateCompanyForm } from '@/types'
+import { UpdateCompanySchema } from '@/lib/validation'
 
 interface CompanySettingsProps {
-	company: CompanyType
-	onUpdateCompany: (data: CompanyType) => Promise<void>
+	company: Company
+	onUpdateCompany: (data: UpdateCompanyForm) => Promise<void>
 	onUploadLogo: (file: File) => Promise<string>
 }
 
@@ -27,7 +28,7 @@ export function CompanySettings({
 	onUpdateCompany,
 	onUploadLogo,
 }: CompanySettingsProps) {
-	const [formData, setFormData] = useState<CompanyType>({
+	const [formData, setFormData] = useState<UpdateCompanyForm>({
 		name: company.name || '',
 		slug: company.slug || '',
 		logo: company.logo || '',
@@ -43,7 +44,7 @@ export function CompanySettings({
 		setIsLoading(true)
 
 		try {
-			const validatedData = companySchema.parse(formData)
+			const validatedData = UpdateCompanySchema.parse(formData)
 			await onUpdateCompany(validatedData)
 		} catch (error) {
 			if (error instanceof z.ZodError) {
@@ -100,10 +101,13 @@ export function CompanySettings({
 						{/* Logo Section */}
 						<div className="flex items-center gap-6">
 							<Avatar className="h-20 w-20 rounded-lg">
-								<AvatarImage src={formData.logo} className="object-cover" />
-								<AvatarFallback className="rounded-lg text-lg bg-primary/10">
-									<Building2 className="h-8 w-8" />
-								</AvatarFallback>
+								{formData.logo ? (
+									<AvatarImage src={formData.logo} className="object-cover" />
+								) : (
+									<AvatarFallback className="rounded-lg text-lg bg-primary/10">
+										<Building2 className="h-8 w-8" />
+									</AvatarFallback>
+								)}
 							</Avatar>
 							<div className="space-y-2">
 								<Label>Logo de la empresa</Label>
@@ -133,7 +137,7 @@ export function CompanySettings({
 								</div>
 								<Input
 									placeholder="O ingresa URL del logo"
-									value={formData.logo}
+									value={formData.logo ?? ''}
 									onChange={(e) =>
 										setFormData({ ...formData, logo: e.target.value })
 									}
