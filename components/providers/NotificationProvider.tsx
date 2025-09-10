@@ -3,9 +3,10 @@
 import { createContext, useContext, ReactNode } from 'react'
 import { NotificationManager } from '@/lib/notifications'
 import { useNotifications } from '@/hooks/useNotifications'
+import { Notifications } from '@/types'
 
 interface NotificationContextType {
-	notifications: any[]
+	notifications: Notifications[]
 	unreadCount: number
 	markAsRead: (id: string) => void
 	markAllAsRead: () => void
