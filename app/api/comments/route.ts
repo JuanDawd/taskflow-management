@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { commentSchema } from '@/lib/validation'
 import { z } from 'zod'
+import { TaskCommentSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
 	try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const validatedData = commentSchema.parse(body)
+		const validatedData = TaskCommentSchema.parse(body)
 
 		// Check if user has access to the task
 		const task = await db.task.findFirst({
@@ -41,19 +41,13 @@ export async function POST(request: NextRequest) {
 			)
 		}
 
-		const comment = await db.comment.create({
+		const comment = await db.taskComment.create({
 			data: {
 				...validatedData,
 				userId: session.user.id,
-				parentId: body.parentId || null,
 			},
 			include: {
 				user: true,
-				replies: {
-					include: {
-						user: true,
-					},
-				},
 			},
 		})
 

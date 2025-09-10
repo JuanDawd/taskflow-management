@@ -10,7 +10,7 @@ import {
 	PopoverTrigger,
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { NotificationManager, Notification } from '@/lib/notifications'
+import { NotificationManager } from '@/lib/notifications'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'

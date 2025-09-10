@@ -181,3 +181,62 @@ export type ProjectStats = {
 	totalComments: number
 	totalFiles: number
 }
+
+export type Notifications = {
+	id: string
+	type:
+		| 'task_created'
+		| 'task_updated'
+		| 'task_assigned'
+		| 'comment_added'
+		| 'project_updated'
+		| 'mention'
+		| 'deadline_reminder'
+		| 'info'
+		| 'warning'
+		| 'error'
+	title: string
+	message: string
+	timestamp: Date
+	read: boolean
+	userId: string
+
+	// Optional metadata based on notification type
+	taskId?: string
+	projectId?: string
+	commentId?: string
+	mentionedById?: string
+
+	// UI specific
+	actionUrl?: string
+	actionText?: string
+	priority?: 'low' | 'medium' | 'high'
+
+	// Related entities for rich display
+	task?: {
+		id: string
+		title: string
+		status: string
+	}
+	project?: {
+		id: string
+		name: string
+	}
+	user?: {
+		id: string
+		name: string
+		avatar?: string
+	}
+}
+
+export type NotificationPreferences = {
+	email: boolean
+	push: boolean
+	inApp: boolean
+	taskAssigned: boolean
+	taskCompleted: boolean
+	comments: boolean
+	mentions: boolean
+	deadlineReminders: boolean
+	projectUpdates: boolean
+}

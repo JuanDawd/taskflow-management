@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Project } from '@/types'
+import { User, Project, TeamMember, CreateTeamMemberForm } from '@/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,23 +50,15 @@ import {
 	UserPlus,
 	Search,
 	Crown,
-	Eye,
 } from 'lucide-react'
-import { MemberInvite, memberInviteSchema } from '@/lib/validation'
 import { z } from 'zod'
-
-interface TeamMember extends User {
-	role: 'ADMIN' | 'MEMBER'
-	joinedAt: string
-	projects?: Project[]
-}
 
 interface MemberManagementProps {
 	members: TeamMember[]
 	projects: Project[]
-	onInviteMember: (data: MemberInvite) => Promise<void>
+	onInviteMember: (data: CreateTeamMemberForm) => Promise<void>
 	onRemoveMember: (memberId: string) => Promise<void>
-	currentUserRole: 'ADMIN' | 'MEMBER' 
+	currentUserRole: 'ADMIN' | 'MEMBER'
 }
 
 const roleConfig = {

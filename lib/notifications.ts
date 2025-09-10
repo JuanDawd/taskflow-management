@@ -1,85 +1,186 @@
-import { WebSocketManager } from './websocket'
-
-export interface Notification {
-	id: string
-	type:
-		| 'task_assigned'
-		| 'task_completed'
-		| 'comment_added'
-		| 'project_updated'
-		| 'member_added'
-	title: string
-	message: string
-	userId: string
-	projectId?: string
-	taskId?: string
-	createdAt: string
-	read: boolean
-}
+'use client'
+import { Notifications, NotificationPreferences } from '@/types'
 
 export class NotificationManager {
-	private wsManager: WebSocketManager
-	private notifications: Notification[] = []
-	private listeners: Set<(notifications: Notification[]) => void> = new Set()
+	private notifications: Notifications[] = []
+	private listeners: Set<(notifications: Notifications[]) => void> = new Set()
 
-	constructor(wsUrl: string) {
-		this.wsManager = new WebSocketManager(wsUrl)
-		this.setupWebSocketListeners()
-	}
-
-	private setupWebSocketListeners() {
-		this.wsManager.on('notification', (notification: Notification) => {
-			this.notifications.unshift(notification)
-			this.notifyListeners()
-			this.showBrowserNotification(notification)
-		})
-	}
-
-	private showBrowserNotification(notification: Notification) {
-		if ('Notification' in window && Notification.permission === 'granted') {
-			new Notification(notification.title, {
-				body: notification.message,
-				icon: '/logo.png',
-			})
+	constructor() {
+		if (typeof window !== 'undefined') {
+			this.loadFromStorage()
+			this.requestPermission()
 		}
 	}
 
-	public requestNotificationPermission() {
-		if ('Notification' in window && Notification.permission === 'default') {
-			Notification.requestPermission()
+	// Request browser notification permission
+	async requestPermission(): Promise<boolean> {
+		if (!('Notification' in window)) {
+			console.log('This browser does not support notifications')
+			return false
 		}
-	}
 
-	public subscribe(callback: (notifications: Notification[]) => void) {
-		this.listeners.add(callback)
-		callback(this.notifications)
-	}
-
-	public unsubscribe(callback: (notifications: Notification[]) => void) {
-		this.listeners.delete(callback)
-	}
-
-	private notifyListeners() {
-		this.listeners.forEach((callback) => callback(this.notifications))
-	}
-
-	public markAsRead(notificationId: string) {
-		const notification = this.notifications.find((n) => n.id === notificationId)
-		if (notification) {
-			notification.read = true
-			this.notifyListeners()
-			// Send to server
-			this.wsManager.send('mark_notification_read', { notificationId })
+		if (Notification.permission === 'granted') {
+			return true
 		}
+
+		if (Notification.permission !== 'denied') {
+			const permission = await Notification.requestPermission()
+			return permission === 'granted'
+		}
+
+		return false
 	}
 
-	public markAllAsRead() {
-		this.notifications.forEach((n) => (n.read = true))
+	// Add notification
+	addNotification(
+		notification: Omit<Notifications, 'id' | 'timestamp' | 'read'>,
+	): Notifications {
+		const newNotification: Notifications = {
+			...notification,
+			id: crypto.randomUUID(),
+			timestamp: new Date(),
+			read: false,
+		}
+
+		this.notifications.unshift(newNotification)
+
+		// Keep only last 100 notifications
+		if (this.notifications.length > 100) {
+			this.notifications = this.notifications.slice(0, 100)
+		}
+
+		this.saveToStorage()
 		this.notifyListeners()
-		this.wsManager.send('mark_all_notifications_read', {})
+
+		// Show browser notification for high priority
+		if (notification.priority === 'high') {
+			this.showBrowserNotification(newNotification)
+		}
+
+		return newNotification
 	}
 
-	public getUnreadCount() {
+	// Show browser notification
+	private async showBrowserNotification(notification: Notifications) {
+		const hasPermission = await this.requestPermission()
+		if (!hasPermission) return
+
+		const browserNotification = new Notification(notification.title, {
+			body: notification.message,
+			icon: '/icon-192.png',
+			tag: notification.id,
+			requireInteraction: notification.priority === 'high',
+		})
+
+		browserNotification.onclick = () => {
+			window.focus()
+			if (notification.actionUrl) {
+				window.location.href = notification.actionUrl
+			}
+			browserNotification.close()
+		}
+
+		// Auto close after 5 seconds for non-high priority
+		if (notification.priority !== 'high') {
+			setTimeout(() => browserNotification.close(), 5000)
+		}
+	}
+
+	// Get all notifications
+	getNotifications(): Notifications[] {
+		return [...this.notifications]
+	}
+
+	// Get unread notifications
+	getUnreadNotifications(): Notifications[] {
+		return this.notifications.filter((n) => !n.read)
+	}
+
+	// Get unread count
+	getUnreadCount(): number {
 		return this.notifications.filter((n) => !n.read).length
 	}
+
+	// Mark as read
+	markAsRead(id: string): void {
+		const notification = this.notifications.find((n) => n.id === id)
+		if (notification && !notification.read) {
+			notification.read = true
+			this.saveToStorage()
+			this.notifyListeners()
+		}
+	}
+
+	// Mark all as read
+	markAllAsRead(): void {
+		let hasChanges = false
+		this.notifications.forEach((notification) => {
+			if (!notification.read) {
+				notification.read = true
+				hasChanges = true
+			}
+		})
+
+		if (hasChanges) {
+			this.saveToStorage()
+			this.notifyListeners()
+		}
+	}
+
+	// Delete notification
+	deleteNotification(id: string): void {
+		const index = this.notifications.findIndex((n) => n.id === id)
+		if (index !== -1) {
+			this.notifications.splice(index, 1)
+			this.saveToStorage()
+			this.notifyListeners()
+		}
+	}
+
+	// Clear all notifications
+	clearAll(): void {
+		this.notifications = []
+		this.saveToStorage()
+		this.notifyListeners()
+	}
+
+	// Subscribe to changes
+	subscribe(listener: (notifications: Notifications[]) => void): () => void {
+		this.listeners.add(listener)
+		return () => this.listeners.delete(listener)
+	}
+
+	// Notify all listeners
+	private notifyListeners(): void {
+		this.listeners.forEach((listener) => listener([...this.notifications]))
+	}
+
+	// Storage methods
+	private saveToStorage(): void {
+		if (typeof window !== 'undefined') {
+			localStorage.setItem(
+				'taskflow_notifications',
+				JSON.stringify(this.notifications),
+			)
+		}
+	}
+
+	private loadFromStorage(): void {
+		if (typeof window !== 'undefined') {
+			const stored = localStorage.getItem('taskflow_notifications')
+			if (stored) {
+				try {
+					const parsed = JSON.parse(stored)
+					this.notifications = parsed.map((n: Notifications) => ({
+						...n,
+						timestamp: new Date(n.timestamp),
+					}))
+				} catch (error) {
+					console.error('Failed to load notifications from storage:', error)
+				}
+			}
+		}
+	}
 }
+
+export const notificationManager = new NotificationManager()

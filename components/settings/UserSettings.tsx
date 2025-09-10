@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { User } from '@/types'
+import { UpdatePasswordForm, UpdateUserForm, User } from '@/types'
 import {
 	Card,
 	CardContent,
@@ -32,11 +32,7 @@ import {
 	Save,
 	AlertTriangle,
 } from 'lucide-react'
-import {
-	PasswordUpdate,
-	UserProfile,
-	userProfileSchema,
-} from '@/lib/validation'
+import { UpdateUserSchema } from '@/lib/validation'
 import { z } from 'zod'
 
 interface UserSettingsProps {
@@ -51,8 +47,8 @@ interface UserSettingsProps {
 			comments: boolean
 		}
 	}
-	onUpdateProfile: (data: UserProfile) => Promise<void>
-	onUpdatePassword: (data: PasswordUpdate) => Promise<void>
+	onUpdateProfile: (data: UpdateUserForm) => Promise<void>
+	onUpdatePassword: (data: UpdatePasswordForm) => Promise<void>
 }
 
 const timezones = [
@@ -103,7 +99,7 @@ export function UserSettings({
 		setIsLoading(true)
 
 		try {
-			const validatedData = userProfileSchema.parse(profileData)
+			const validatedData = UpdateUserSchema.parse(profileData)
 			await onUpdateProfile(validatedData)
 		} catch (error) {
 			if (error instanceof z.ZodError) {
