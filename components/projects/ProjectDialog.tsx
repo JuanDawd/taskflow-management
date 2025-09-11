@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import {
 	CreateProjectForm,
 	ProjectWithRelations,
+	TeamMemberRelations,
 	UpdateProjectForm,
 	User,
 } from '@/types'
@@ -24,6 +25,16 @@ import { z } from 'zod'
 import { toast } from '@/hooks/use-toast'
 import { CreateProjectSchema } from '@/lib/validation'
 import { useSession } from 'next-auth/react'
+import { Users, X } from 'lucide-react'
+import { Badge } from '../ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '../ui/select'
 
 interface ProjectDialogProps {
 	project?: ProjectWithRelations
@@ -40,6 +51,8 @@ export function ProjectDialog({
 	onSave,
 }: ProjectDialogProps) {
 	const { data: session } = useSession()
+	const [selectValue, setSelectValue] = useState<string>('')
+
 	const [formData, setFormData] = useState<UpdateProjectForm>({
 		name: '',
 		description: '',
@@ -48,6 +61,13 @@ export function ProjectDialog({
 		companyId: '',
 		ownerId: '',
 	})
+
+	const [selectedMembers, setSelectedMembers] = useState<TeamMemberRelations[]>(
+		[],
+	)
+	const [unselectedMembers, setUnselectedMembers] = useState<
+		TeamMemberRelations[]
+	>([])
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const [isLoading, setIsLoading] = useState(false)
@@ -72,8 +92,24 @@ export function ProjectDialog({
 				ownerId: '',
 			})
 		}
+
+		const loadCompanyMembers = async () => {
+			const response = await fetch(`/api/team/members`)
+			if (response.ok) {
+				const selectedIds = new Set(selectedMembers.map((member) => member.id))
+
+				const data = await response.json()
+
+				setUnselectedMembers(
+					data.filter(
+						(member: TeamMemberRelations) => !selectedIds.has(member.id),
+					),
+				)
+			}
+		}
 		setErrors({})
-	}, [project, open])
+		loadCompanyMembers()
+	}, [project, open, selectedMembers])
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -117,21 +153,37 @@ export function ProjectDialog({
 		}
 	}
 
-	const addMember = async (userId: string) => {
-		await fetch('/api/team/member', {
-			method: 'POST',
-		})
+	const addMember = async (memberId: string) => {
+		const newMember = unselectedMembers.find((member) => member.id === memberId)
+		if (!newMember) {
+			toast({
+				variant: 'destructive',
+				description: 'El miembro no existe',
+				title: 'Error al añadir al miembro',
+			})
+		} else {
+			setSelectedMembers((prevSM) => [...prevSM, newMember])
+			setUnselectedMembers((prevUM) =>
+				prevUM.filter((member) => member.id !== memberId),
+			)
+			setSelectValue('')
+		}
 	}
 
 	const removeMember = async (memberId: string) => {
-		await fetch(`/api/team/member/${memberId}`, {
-			method: 'DELETE',
-		})
-
-		toast({
-			title: 'Miembro eliminado',
-			description: 'El miembro ha sido eliminado del equipo',
-		})
+		const oldMember = selectedMembers.find((member) => member.id === memberId)
+		if (!oldMember) {
+			toast({
+				variant: 'destructive',
+				description: 'El miembro no existe',
+				title: 'Error al eliminar al miembro',
+			})
+		} else {
+			setUnselectedMembers((prevSM) => [...prevSM, oldMember])
+			setSelectedMembers((prevUM) =>
+				prevUM.filter((member) => member.id !== memberId),
+			)
+		}
 	}
 
 	return (
@@ -217,15 +269,13 @@ export function ProjectDialog({
 							)}
 						</div>
 					</div>
-					{/*
-					 Team Members 
+
 					<div>
 						<Label className="flex items-center gap-2">
 							<Users className="h-4 w-4" />
 							Miembros del equipo
 						</Label>
 
-						 Selected Members
 						{selectedMembers.length > 0 && (
 							<div className="flex flex-wrap gap-2 mt-2 mb-3">
 								{selectedMembers.map((member) => (
@@ -235,15 +285,18 @@ export function ProjectDialog({
 										className="flex items-center gap-2"
 									>
 										<Avatar className="h-4 w-4">
-											<AvatarImage src={member.avatar} />
-											<AvatarFallback className="text-xs">
-												{member.name
-													?.split(' ')
-													.map((n) => n[0])
-													.join('')}
-											</AvatarFallback>
+											{member.user?.avatar ? (
+												<AvatarImage src={member.user?.avatar} />
+											) : (
+												<AvatarFallback className="text-xs">
+													{member.user?.name
+														?.split(' ')
+														.map((n) => n[0])
+														.join('')}
+												</AvatarFallback>
+											)}
 										</Avatar>
-										<span>{member.name}</span>
+										<span>{member.user?.name}</span>
 										<Button
 											size="sm"
 											variant="ghost"
@@ -256,10 +309,8 @@ export function ProjectDialog({
 								))}
 							</div>
 						)}
-
-						Add Members 
 						{unselectedMembers.length > 0 && (
-							<Select onValueChange={addMember}>
+							<Select onValueChange={addMember} value={selectValue}>
 								<SelectTrigger>
 									<SelectValue placeholder="Seleccionar miembro del equipo" />
 								</SelectTrigger>
@@ -268,18 +319,21 @@ export function ProjectDialog({
 										<SelectItem key={member.id} value={member.id}>
 											<div className="flex items-center gap-2">
 												<Avatar className="h-6 w-6">
-													<AvatarImage src={member.avatar} />
-													<AvatarFallback className="text-xs">
-														{member.name
-															?.split(' ')
-															.map((n) => n[0])
-															.join('')}
-													</AvatarFallback>
+													{member.user?.avatar ? (
+														<AvatarImage src={member.user?.avatar} />
+													) : (
+														<AvatarFallback className="text-xs">
+															{member.user?.name
+																?.split(' ')
+																.map((n) => n[0])
+																.join('')}
+														</AvatarFallback>
+													)}
 												</Avatar>
 												<div>
-													<div className="font-medium">{member.name}</div>
+													<div className="font-medium">{member.user?.name}</div>
 													<div className="text-xs text-muted-foreground">
-														{member.email}
+														{member.user?.email}
 													</div>
 												</div>
 											</div>
@@ -287,9 +341,8 @@ export function ProjectDialog({
 									))}
 								</SelectContent>
 							</Select>
-						)} 
+						)}
 					</div>
-					*/}
 					<DialogFooter>
 						<Button
 							type="button"
