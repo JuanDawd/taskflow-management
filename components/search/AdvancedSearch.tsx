@@ -20,7 +20,6 @@ import {
 	X,
 	Calendar as CalendarIcon,
 	User as UserIcon,
-	Tag,
 	Flag,
 	FolderOpen,
 	SlidersHorizontal,
@@ -106,14 +105,6 @@ export function AdvancedSearch({
 		}
 		setLocalFilters(clearedFilters)
 		onFiltersChange(clearedFilters)
-	}
-
-	const toggleArrayFilter = (array: string[], value: string) => {
-		if (array.includes(value)) {
-			return array.filter((item) => item !== value)
-		} else {
-			return [...array, value]
-		}
 	}
 
 	const getActiveFiltersCount = () => {

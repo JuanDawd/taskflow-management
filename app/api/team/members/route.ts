@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { z } from 'zod'
-import { randomBytes } from 'crypto'
 import { CreateTeamMemberSchema } from '@/lib/validation'
 
 export async function GET() {

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { useTaskStore } from '@/hooks/useTaskStore'
 import { Task } from '@prisma/client'
-import { CreateTaskForm, UpdateTaskCommentForm } from '@/types'
+import { CreateTaskForm } from '@/types'
 
 interface TaskDialogProps {
 	task?: Task

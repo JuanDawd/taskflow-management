@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
 	User,
 	Project,
@@ -95,11 +95,15 @@ export function MemberManagement({
 	const [inviteErrors, setInviteErrors] = useState<Record<string, string>>({})
 	const [isLoading, setIsLoading] = useState(false)
 
-	const filteredMembers = members.filter(
-		(member) =>
-			member.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			member.user?.email.toLowerCase().includes(searchTerm.toLowerCase()),
-	)
+	const filteredMembers = useMemo(() => {
+		if (searchTerm === '') return members
+		return members.filter(
+			(member) =>
+				member.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				member.user?.email.toLowerCase().includes(searchTerm.toLowerCase()),
+		)
+	}, [members, searchTerm])
+	console.log({ filteredMembers })
 
 	const handleInvite = async (e: React.FormEvent) => {
 		e.preventDefault()

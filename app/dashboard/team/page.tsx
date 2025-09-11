@@ -38,6 +38,7 @@ export default function TeamPage() {
 				const response = await fetch('/api/team/members')
 				if (!response.ok) throw new Error('Error al cargar miembros')
 				const data = await response.json()
+
 				setMembers(data)
 
 				// Get current user role
@@ -90,7 +91,7 @@ export default function TeamPage() {
 				description: `Se ha enviado una invitación a ${inviteData.userId}`,
 			})
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 
 			toast({
 				title: 'Error',
@@ -124,7 +125,7 @@ export default function TeamPage() {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 
 			toast({
 				title: 'Error',
@@ -152,7 +153,7 @@ export default function TeamPage() {
 				description: 'El miembro ha sido eliminado del equipo',
 			})
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 
 			toast({
 				title: 'Error',

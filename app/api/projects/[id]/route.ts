@@ -180,38 +180,26 @@ export async function DELETE(request: NextRequest, { params }: Context) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 		}
 
-		// Check admin permissions
-		const adminMember = await db.teamMember.findFirst({
+		const { id } = await params
+
+		// Check if user owns this specific project
+		const project = await db.project.findFirst({
 			where: {
-				userId: session.user.id,
-				companyId: session.user.companyId,
-				role: 'ADMIN',
+				id,
+				ownerId: session.user.id,
+				companyId: session.user.company.id,
 			},
 		})
 
-		if (!adminMember) {
+		if (!project) {
 			return NextResponse.json(
-				{ error: 'Sin permisos de administrador' },
-				{ status: 403 },
+				{ error: 'Proyecto no encontrado o sin permisos' },
+				{ status: 404 },
 			)
 		}
 
-		const { id } = await params
-
-		// Cannot delete yourself
-		const memberToDelete = await db.teamMember.findUnique({
-			where: { id },
-		})
-
-		if (memberToDelete?.userId === session.user.id) {
-			return NextResponse.json(
-				{ error: 'No puedes eliminarte a ti mismo' },
-				{ status: 422 },
-			)
-		}
-
-		// Delete member and all related data
-		await db.teamMember.delete({
+		// Delete project (members will cascade delete if configured)
+		await db.project.delete({
 			where: { id },
 		})
 
