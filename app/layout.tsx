@@ -4,6 +4,7 @@ import './globals.css'
 import { Toaster } from 'sonner'
 import ClientSessionProvider from '@/components/providers/SessionProvider'
 import { ThemeProvider } from 'next-themes'
+import { WebSocketProvider } from '@/contexts/WebSocketContext'
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -37,8 +38,10 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						{children}
-						<Toaster />
+						<WebSocketProvider>
+							{children}
+							<Toaster />
+						</WebSocketProvider>
 					</ThemeProvider>
 				</ClientSessionProvider>
 			</body>

@@ -1,16 +1,20 @@
 'use client'
 
-import * as React from 'react'
+import React from 'react'
+import type { ToastT } from 'sonner'
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
-
-type ToasterToast = ToastProps & {
+// Update your types
+type ToasterToast = ToastT & {
+	variant?: 'default' | 'destructive' | 'success' | 'warning' | 'info'
 	id: string
 	title?: React.ReactNode
 	description?: React.ReactNode
-	action?: ToastActionElement
+	open?: boolean
+	onOpenChange?: (open: boolean) => void
 }
+
+const TOAST_LIMIT = 1
+const TOAST_REMOVE_DELAY = 1000000
 
 let count = 0
 

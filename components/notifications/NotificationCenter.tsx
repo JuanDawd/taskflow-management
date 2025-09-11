@@ -11,22 +11,27 @@ import {
 } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { NotificationManager } from '@/lib/notifications'
-import { format, parseISO } from 'date-fns'
+import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { Notifications } from '@/types'
 
 interface NotificationCenterProps {
 	notificationManager: NotificationManager
 }
 
 const notificationTypeConfig = {
+	task_created: {
+		color: 'bg-blue-100 text-blue-700',
+		label: 'Tarea creada',
+	},
+	task_updated: {
+		color: 'bg-blue-100 text-blue-700',
+		label: 'Tarea actualizada',
+	},
 	task_assigned: {
 		color: 'bg-blue-100 text-blue-700',
 		label: 'Tarea asignada',
-	},
-	task_completed: {
-		color: 'bg-green-100 text-green-700',
-		label: 'Tarea completada',
 	},
 	comment_added: {
 		color: 'bg-purple-100 text-purple-700',
@@ -36,22 +41,41 @@ const notificationTypeConfig = {
 		color: 'bg-orange-100 text-orange-700',
 		label: 'Proyecto actualizado',
 	},
-	member_added: { color: 'bg-pink-100 text-pink-700', label: 'Nuevo miembro' },
+	mention: {
+		color: 'bg-yellow-100 text-yellow-700',
+		label: 'Mención',
+	},
+	deadline_reminder: {
+		color: 'bg-red-100 text-red-700',
+		label: 'Recordatorio de fecha límite',
+	},
+	info: {
+		color: 'bg-gray-100 text-gray-700',
+		label: 'Información',
+	},
+	warning: {
+		color: 'bg-yellow-100 text-yellow-700',
+		label: 'Advertencia',
+	},
+	error: {
+		color: 'bg-red-100 text-red-700',
+		label: 'Error',
+	},
 }
 
 export function NotificationCenter({
 	notificationManager,
 }: NotificationCenterProps) {
-	const [notifications, setNotifications] = useState<Notification[]>([])
+	const [notifications, setNotifications] = useState<Notifications[]>([])
 	const [isOpen, setIsOpen] = useState(false)
 
 	useEffect(() => {
-		const handleNotifications = (newNotifications: Notification[]) => {
+		const handleNotifications = (newNotifications: Notifications[]) => {
 			setNotifications(newNotifications)
 		}
 
 		notificationManager.subscribe(handleNotifications)
-		notificationManager.requestNotificationPermission()
+		notificationManager.requestPermission()
 
 		return () => {
 			notificationManager.unsubscribe(handleNotifications)
@@ -140,11 +164,9 @@ export function NotificationCenter({
 															{notification.message}
 														</p>
 														<p className="text-xs text-muted-foreground mt-2">
-															{format(
-																parseISO(notification.createdAt),
-																'dd MMM HH:mm',
-																{ locale: es },
-															)}
+															{format(notification.timestamp, 'dd MMM HH:mm', {
+																locale: es,
+															})}
 														</p>
 													</div>
 

@@ -23,12 +23,14 @@ import {
 	RegisterUserSchema,
 	SlugSchema,
 	TaskAttachmentSchema,
+	TaskCommentRelationsSchema,
 	TaskCommentSchema,
 	TaskFilterSchema,
 	TaskPrioritySchema,
 	TaskSchema,
 	TaskStatusSchema,
 	TaskWithRelationsSchema,
+	TeamMemberRelationsSchema,
 	TeamMemberSchema,
 	UpdateCompanySchema,
 	UpdateProjectMemberSchema,
@@ -113,7 +115,8 @@ export type CompanyWithUsers = z.infer<typeof CompanyWithUsersSchema>
 export type UserWithRelations = z.infer<typeof UserWithRelationsSchema>
 export type ProjectWithRelations = z.infer<typeof ProjectWithRelationsSchema>
 export type TaskWithRelations = z.infer<typeof TaskWithRelationsSchema>
-
+export type TeamMemberRelations = z.infer<typeof TeamMemberRelationsSchema>
+export type TaskCommentRelations = z.infer<typeof TaskCommentRelationsSchema>
 // =============================================================================
 // UTILITY SCHEMAS
 // =============================================================================

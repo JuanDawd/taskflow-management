@@ -18,8 +18,8 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 )
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-	const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001'
-	const notificationData = useNotifications(wsUrl)
+	//const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001'
+	const notificationData = useNotifications()
 
 	return (
 		<NotificationContext.Provider value={notificationData}>

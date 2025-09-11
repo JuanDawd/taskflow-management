@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { Project, TeamMember } from '@/types'
+import {
+	CreateTeamMemberForm,
+	Project,
+	TeamMember,
+	TeamMemberRelations,
+	UpdateTeamMemberForm,
+} from '@/types'
 import { MemberManagement } from '@/components/team/MemberManagement'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/use-toast'
@@ -12,7 +18,7 @@ import { User, UserRole } from '@prisma/client'
 export default function TeamPage() {
 	const { data: session } = useSession()
 	const { toast } = useToast()
-	const [members, setMembers] = useState<TeamMember[]>([])
+	const [members, setMembers] = useState<TeamMemberRelations[]>([])
 	const [projects, setProjects] = useState<Project[]>([])
 	const [currentUserRole, setCurrentUserRole] = useState<User['role']>(
 		UserRole.USER,
@@ -66,8 +72,7 @@ export default function TeamPage() {
 		}
 	}
 
-	const handleInviteMember = async (inviteData: MemberInvite) => {
-		// email, role userId, companyId
+	const handleInviteMember = async (inviteData: CreateTeamMemberForm) => {
 		try {
 			const response = await fetch('/api/team/members', {
 				method: 'POST',
@@ -82,46 +87,52 @@ export default function TeamPage() {
 
 			toast({
 				title: 'Invitación enviada',
-				description: `Se ha enviado una invitación a ${inviteData.email}`,
+				description: `Se ha enviado una invitación a ${inviteData.userId}`,
 			})
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
+		} catch (error) {
+			console.log(error)
+
 			toast({
 				title: 'Error',
-				description: error.message,
+				description: 'error',
 				variant: 'destructive',
 			})
 		}
 	}
 
-	// const handleUpdateMember = async (memberId: string, updateData: any) => {
-	// 	try {
-	// 		const response = await fetch(`/api/team/members/${memberId}`, {
-	// 			method: 'PUT',
-	// 			headers: { 'Content-Type': 'application/json' },
-	// 			body: JSON.stringify(updateData),
-	// 		})
+	const handleUpdateMember = async (
+		memberId: string,
+		updateData: UpdateTeamMemberForm,
+	) => {
+		try {
+			const response = await fetch(`/api/team/members/${memberId}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(updateData),
+			})
 
-	// 		if (!response.ok) {
-	// 			const errorData = await response.json()
-	// 			throw new Error(errorData.error || 'Error al actualizar miembro')
-	// 		}
+			if (!response.ok) {
+				const errorData = await response.json()
+				throw new Error(errorData.error || 'Error al actualizar miembro')
+			}
 
-	// 		const updatedMember = await response.json()
-	// 		setMembers(members.map((m) => (m.id === memberId ? updatedMember : m)))
+			const updatedMember = await response.json()
+			setMembers(members.map((m) => (m.id === memberId ? updatedMember : m)))
 
-	// 		toast({
-	// 			title: 'Miembro actualizado',
-	// 			description: 'Los cambios se han guardado correctamente',
-	// 		})
-	// 	} catch (error: any) {
-	// 		toast({
-	// 			title: 'Error',
-	// 			description: error.message,
-	// 			variant: 'destructive',
-	// 		})
-	// 	}
-	// }
+			toast({
+				title: 'Miembro actualizado',
+				description: 'Los cambios se han guardado correctamente',
+			})
+		} catch (error) {
+			console.log(error)
+
+			toast({
+				title: 'Error',
+				description: 'error',
+				variant: 'destructive',
+			})
+		}
+	}
 
 	const handleRemoveMember = async (memberId: string) => {
 		try {
@@ -141,9 +152,11 @@ export default function TeamPage() {
 				description: 'El miembro ha sido eliminado del equipo',
 			})
 		} catch (error) {
+			console.log(error)
+
 			toast({
 				title: 'Error',
-				description: error,
+				description: 'error',
 				variant: 'destructive',
 			})
 		}

@@ -65,42 +65,43 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json()
+
 		const validatedData = CreateTeamMemberSchema.parse(body)
 
 		// Check if user already exists
 		const existingUser = await db.user.findUnique({
-			where: { email: validatedData.email },
+			where: { id: validatedData.userId },
 		})
 
-		if (existingUser) {
-			// Check if already a member
-			const existingMember = await db.teamMember.findFirst({
-				where: {
-					userId: existingUser.id,
-					companyId: session.user.companyId,
-				},
-			})
+		if (!existingUser) {
+			return NextResponse.json(
+				{ error: 'El usuario ya no existe' },
+				{ status: 422 },
+			)
+		}
 
-			if (existingMember) {
-				return NextResponse.json(
-					{ error: 'El usuario ya es miembro del equipo' },
-					{ status: 422 },
-				)
-			}
+		const existingMember = await db.teamMember.findFirst({
+			where: {
+				userId: existingUser.id,
+				companyId: session.user.companyId,
+			},
+		})
+		// Check if already a member
+		if (existingMember) {
+			return NextResponse.json(
+				{ error: 'El usuario ya es miembro del equipo' },
+				{ status: 422 },
+			)
 		}
 
 		// Create invitation
 		const invitation = await db.teamMember.create({
 			data: {
 				role: validatedData.role,
-				token: randomBytes(32).toString('hex'),
-				expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
 				companyId: session.user.companyId,
-				invitedById: session.user.id,
+				userId: existingUser?.id,
 			},
 		})
-
-		// TODO: Send invitation email
 
 		return NextResponse.json(invitation, { status: 201 })
 	} catch (error) {

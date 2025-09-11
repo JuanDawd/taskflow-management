@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
-import { NotificationManager, Notification } from '@/lib/notifications'
+import { NotificationManager } from '@/lib/notifications'
+import { Notifications } from '@/types'
 
-export function useNotifications(wsUrl: string) {
-	const [notificationManager] = useState(() => new NotificationManager(wsUrl))
-	const [notifications, setNotifications] = useState<Notification[]>([])
+export function useNotifications() {
+	const [notificationManager] = useState(() => new NotificationManager())
+	const [notifications, setNotifications] = useState<Notifications[]>([])
 	const [unreadCount, setUnreadCount] = useState(0)
 
 	useEffect(() => {
-		const handleNotifications = (newNotifications: Notification[]) => {
+		const handleNotifications = (newNotifications: Notifications[]) => {
 			setNotifications(newNotifications)
 			setUnreadCount(newNotifications.filter((n) => !n.read).length)
 		}

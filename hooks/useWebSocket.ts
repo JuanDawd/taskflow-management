@@ -12,7 +12,10 @@ interface WebSocketMessage {
 		| 'comment_added'
 		| 'user_joined'
 		| 'user_left'
-	data: Task | User
+	data:
+		| { task: Task; author: User } // comment_added
+		| { user: User } // user_joined
+		| { task: Task }
 	userId?: string
 	timestamp: string
 }
@@ -64,18 +67,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 					const message: WebSocketMessage = JSON.parse(event.data)
 					options.onMessage?.(message)
 
-					const { title } = message.data as Task
+					const { task } = message.data as { task: Task; author: User }
 
 					// Show toast notifications for certain events
 					if (message.type === 'task_created') {
 						toast({
 							title: 'Nueva tarea creada',
-							description: `Se ha creado la tarea: ${title}`,
+							description: `Se ha creado la tarea: ${task.title}`,
 						})
 					} else if (message.type === 'task_updated') {
 						toast({
 							title: 'Tarea actualizada',
-							description: `Se ha actualizado la tarea: ${title}`,
+							description: `Se ha actualizado la tarea: ${task.title}`,
 						})
 					}
 				} catch (error) {

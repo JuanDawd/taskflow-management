@@ -118,9 +118,10 @@ export default function ProjectsPage() {
 				})
 			}
 		} catch (error) {
+			console.log(error)
 			toast({
 				title: 'Error',
-				description: error,
+				description: 'error',
 				variant: 'destructive',
 			})
 		}
@@ -141,10 +142,11 @@ export default function ProjectsPage() {
 				title: 'Proyecto eliminado',
 				description: 'El proyecto se ha eliminado correctamente',
 			})
-		} catch (error: unknown) {
+		} catch (error) {
+			console.log(error)
 			toast({
 				title: 'Error',
-				description: error,
+				description: 'error',
 				variant: 'destructive',
 			})
 		}

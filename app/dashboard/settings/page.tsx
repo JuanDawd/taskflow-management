@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Company, UpdatePasswordForm, User } from '@/types'
+import { Company, UpdatePasswordForm, UpdateUserForm, User } from '@/types'
 import { UserSettings } from '@/components/settings/UserSettings'
 import { CompanySettings } from '@/components/settings/CompanySettings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -46,7 +46,7 @@ export default function SettingsPage() {
 		}
 	}
 
-	const handleUpdateProfile = async (profileData: User) => {
+	const handleUpdateProfile = async (profileData: UpdateUserForm) => {
 		try {
 			const response = await fetch('/api/user/profile', {
 				method: 'PUT',
@@ -67,9 +67,11 @@ export default function SettingsPage() {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
+			console.log(error)
+
 			toast({
 				title: 'Error',
-				description: error,
+				description: 'error',
 				variant: 'destructive',
 			})
 		}
@@ -119,9 +121,11 @@ export default function SettingsPage() {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
+			console.log(error)
+
 			toast({
 				title: 'Error',
-				description: error,
+				description: 'error',
 				variant: 'destructive',
 			})
 		}

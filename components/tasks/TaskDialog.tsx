@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { TaskForm } from '@/components/forms/TaskForm'
 import { useTaskStore } from '@/hooks/useTaskStore'
 import { Task } from '@prisma/client'
+import { CreateTaskForm, UpdateTaskCommentForm } from '@/types'
 
 interface TaskDialogProps {
 	task?: Task
@@ -26,7 +27,7 @@ export function TaskDialog({
 	const open = controlledOpen !== undefined ? controlledOpen : internalOpen
 	const onOpenChange = controlledOnOpenChange || setInternalOpen
 
-	const handleSubmit = async (data: Task) => {
+	const handleSubmit = async (data: CreateTaskForm) => {
 		if (task) {
 			await updateTask(task.id, data)
 		} else {

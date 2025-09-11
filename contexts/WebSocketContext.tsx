@@ -3,12 +3,29 @@
 import { createContext, useContext } from 'react'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useTaskStore } from '@/hooks/useTaskStore'
-// import { useNotificationStore } from '@/hooks/useNotificationStore'
+import { notificationManager } from '@/lib/notifications'
+import { useSession } from 'next-auth/react'
+import { Task, User } from '@prisma/client'
 
+interface WebSocketMessage {
+	type:
+		| 'task_created'
+		| 'task_updated'
+		| 'task_deleted'
+		| 'comment_added'
+		| 'user_joined'
+		| 'user_left'
+	data:
+		| { task: Task; author: User } // comment_added
+		| { user: User } // user_joined
+		| { task: Task }
+	userId?: string
+	timestamp: string
+}
 interface WebSocketContextType {
 	isConnected: boolean
 	connectionError: string | null
-	sendMessage: (message: string) => void
+	sendMessage: (message: WebSocketMessage) => void
 	reconnect: () => void
 }
 
@@ -16,46 +33,61 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null)
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 	const { fetchTasks } = useTaskStore()
-	// const { addNotification } = useNotificationStore()
-
-	// Temporarily disable notifications to avoid errors
-	const addNotification = (notification: unknown) => {
-		console.log('New notification:', notification)
-	}
 
 	const { isConnected, connectionError, sendMessage, reconnect } = useWebSocket(
 		{
 			onMessage: (message) => {
-				switch (message.type) {
-					case 'task_created':
-					case 'task_updated':
-					case 'task_deleted':
-						// Refresh tasks when changes occur
-						fetchTasks()
-						break
+				try {
+					const { type } = message
+					switch (type) {
+						case 'task_created':
+						case 'task_updated':
+						case 'task_deleted':
+							// Refresh tasks when changes occur
+							fetchTasks()
+							break
 
-					case 'comment_added':
-						addNotification({
-							id: Date.now().toString(),
-							type: 'comment',
-							title: 'Nuevo comentario',
-							message: `${message.data.author.name} comentó en "${message.data.task.title}"`,
-							timestamp: new Date(),
-							read: false,
-							taskId: message.data.taskId,
-						})
-						break
+						case 'comment_added':
+							if ('author' in message.data)
+								notificationManager.addNotification({
+									type: 'comment_added',
+									title: 'Nuevo comentario',
+									message: `${
+										message.data.author.name || 'Usuario'
+									} comentó en "${message.data.task.title || 'una tarea'}"`,
+									priority: 'medium',
+									userId: message.data.author.name,
+									taskId: message.data?.task?.id,
+									actionUrl: `/tasks/${message.data?.task?.id}`,
+									user: {
+										id: message.data?.author.id,
+										name: message.data?.author.name,
+										avatar: message.data?.author.avatar ?? undefined,
+									},
+									task: message.data?.task,
+								})
+							break
 
-					case 'user_joined':
-						addNotification({
-							id: Date.now().toString(),
-							type: 'info',
-							title: 'Usuario conectado',
-							message: `${message.data.name} se ha conectado`,
-							timestamp: new Date(),
-							read: false,
-						})
-						break
+						case 'user_joined':
+							if ('user' in message.data)
+								notificationManager.addNotification({
+									type: 'info',
+									title: 'Usuario conectado',
+									message: `${
+										message.data?.user.name || 'Un usuario'
+									} se ha conectado`,
+									priority: 'low',
+									userId: message.data?.user.id || '',
+									user: {
+										id: message.data?.user.id,
+										name: message.data?.user.name,
+										avatar: message.data?.user.avatar ?? undefined,
+									},
+								})
+							break
+					}
+				} catch (error) {
+					console.error('Error parsing WebSocket message:', error)
 				}
 			},
 			onConnect: () => {

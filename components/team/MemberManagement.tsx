@@ -1,7 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Project, TeamMember, CreateTeamMemberForm } from '@/types'
+import {
+	User,
+	Project,
+	TeamMember,
+	CreateTeamMemberForm,
+	UpdateTeamMemberForm,
+	TeamMemberRelations,
+} from '@/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,13 +59,18 @@ import {
 	Crown,
 } from 'lucide-react'
 import { z } from 'zod'
+import { CreateTeamMemberSchema } from '@/lib/validation'
 
 interface MemberManagementProps {
-	members: TeamMember[]
+	members: TeamMemberRelations[]
 	projects: Project[]
 	onInviteMember: (data: CreateTeamMemberForm) => Promise<void>
 	onRemoveMember: (memberId: string) => Promise<void>
 	currentUserRole: User['role']
+	onUpdateMember: (
+		memberId: string,
+		updateData: UpdateTeamMemberForm,
+	) => Promise<void>
 }
 
 const roleConfig = {
@@ -77,7 +89,7 @@ export function MemberManagement({
 	const [showInviteDialog, setShowInviteDialog] = useState(false)
 	const [inviteData, setInviteData] = useState({
 		email: '',
-		role: 'MEMBER' as TeamMember['role'],
+		role: '' as TeamMember['role'],
 		projectIds: [] as string[],
 	})
 	const [inviteErrors, setInviteErrors] = useState<Record<string, string>>({})
@@ -85,8 +97,8 @@ export function MemberManagement({
 
 	const filteredMembers = members.filter(
 		(member) =>
-			member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			member.email.toLowerCase().includes(searchTerm.toLowerCase()),
+			member.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			member.user?.email.toLowerCase().includes(searchTerm.toLowerCase()),
 	)
 
 	const handleInvite = async (e: React.FormEvent) => {
@@ -95,7 +107,7 @@ export function MemberManagement({
 		setIsLoading(true)
 
 		try {
-			const validatedData = memberInviteSchema.parse(inviteData)
+			const validatedData = CreateTeamMemberSchema.parse(inviteData)
 			await onInviteMember(validatedData)
 
 			setShowInviteDialog(false)
@@ -287,11 +299,11 @@ export function MemberManagement({
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
 										<Avatar className="h-10 w-10">
-											{member.avatar ? (
-												<AvatarImage src={member.avatar} />
+											{member.user?.avatar ? (
+												<AvatarImage src={member.user?.avatar} />
 											) : (
 												<AvatarFallback>
-													{member.name
+													{member.user?.name
 														?.split(' ')
 														.map((n) => n[0])
 														.join('')}
@@ -300,10 +312,10 @@ export function MemberManagement({
 										</Avatar>
 										<div>
 											<h3 className="font-medium leading-none">
-												{member.name}
+												{member.user?.name}
 											</h3>
 											<p className="text-sm text-muted-foreground mt-1">
-												{member.email}
+												{member.user?.email}
 											</p>
 										</div>
 									</div>
@@ -345,7 +357,7 @@ export function MemberManagement({
 																¿Eliminar miembro?
 															</AlertDialogTitle>
 															<AlertDialogDescription>
-																Esta acción eliminará a {member.name} del
+																Esta acción eliminará a {member.user?.name} del
 																equipo. No podrá acceder a los proyectos ni
 																tareas asignadas.
 															</AlertDialogDescription>
@@ -379,14 +391,14 @@ export function MemberManagement({
 
 									<div className="text-xs text-muted-foreground">
 										Desde{' '}
-										{new Date(member.joinedAt).toLocaleDateString('es-ES', {
+										{new Date(member.createdAt).toLocaleDateString('es-ES', {
 											month: 'short',
 											year: 'numeric',
 										})}
 									</div>
 								</div>
 
-								{member.projects && member.projects.length > 0 && (
+								{/* {member.user && member.projects.length > 0 && (
 									<div>
 										<p className="text-xs text-muted-foreground mb-2">
 											Proyectos ({member.projects.length})
@@ -408,7 +420,7 @@ export function MemberManagement({
 											)}
 										</div>
 									</div>
-								)}
+								)} */}
 							</CardContent>
 						</Card>
 					)

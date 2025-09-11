@@ -1,7 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Task, TaskComment, TaskWithRelations, User } from '@/types'
+import {
+	Task,
+	TaskComment,
+	TaskCommentRelations,
+	TaskWithRelations,
+	User,
+} from '@/types'
 import {
 	Dialog,
 	DialogContent,
@@ -22,8 +28,10 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { Calendar, MessageCircle, Send, Edit, Save, X } from 'lucide-react'
-import { format, isValid, parseISO } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { toast } from '@/hooks/use-toast'
+import { useSession } from 'next-auth/react'
 
 interface TaskDetailDialogProps {
 	task: TaskWithRelations
@@ -40,10 +48,13 @@ export function TaskDetailDialog({
 	onOpenChange,
 	onEdit,
 }: TaskDetailDialogProps) {
+	const { data: session } = useSession()
 	const [isEditing, setIsEditing] = useState(false)
 	const [editedTask, setEditedTask] = useState(task)
 	const [newComment, setNewComment] = useState('')
-	const [comments, setComments] = useState<TaskComment[]>(task.comments || [])
+	const [comments, setComments] = useState<TaskCommentRelations[]>(
+		task.comments || [],
+	)
 
 	useEffect(() => {
 		setEditedTask(task)
@@ -58,21 +69,41 @@ export function TaskDetailDialog({
 	const handleAddComment = async () => {
 		if (!newComment.trim()) return
 
-		const comment: Comment = {
-			id: Date.now().toString(),
-			content: newComment,
-			taskId: task.id,
-			userId: 'current-user', // This should come from auth
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			parentId: null,
-		}
+		try {
+			const response = await fetch('/api/comments', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					content: newComment,
+					taskId: task.id,
+					userId: session?.user.id,
+				}),
+			})
 
-		setComments([...comments, comment])
-		setNewComment('')
+			if (!response.ok) {
+				const errorData = await response.json()
+				throw new Error(errorData.error || 'Error al enviar invitación')
+			}
+			toast({
+				title: 'Comentario añadido',
+				description: `Se ha agregado el comentario a ${task.id}`,
+			})
+			console.log(response)
+			const comment = {}
+			//setComments([...comments, comment])
+			setNewComment('')
+		} catch (error) {
+			console.log(error)
+
+			toast({
+				title: 'Error',
+				description: 'error',
+				variant: 'destructive',
+			})
+		}
 	}
 
-	const dueDate = task.dueDate ? parseISO(task.dueDate) : null
+	const dueDate = task.dueDate ?? null
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -170,13 +201,16 @@ export function TaskDetailDialog({
 								<Label>Asignado a</Label>
 								<div className="flex items-center gap-2 mt-1">
 									<Avatar className="h-6 w-6">
-										<AvatarImage src={task.assignee.avatar} />
-										<AvatarFallback>
-											{task.assignee.name
-												?.split(' ')
-												.map((n) => n[0])
-												.join('')}
-										</AvatarFallback>
+										{task.assignee.avatar ? (
+											<AvatarImage src={task.assignee.avatar} />
+										) : (
+											<AvatarFallback>
+												{task.assignee.name
+													?.split(' ')
+													.map((n) => n[0])
+													.join('')}
+											</AvatarFallback>
+										)}
 									</Avatar>
 									<span className="text-sm">{task.assignee.name}</span>
 								</div>
@@ -203,20 +237,6 @@ export function TaskDetailDialog({
 							</div>
 						)}
 					</div>
-
-					{/* Tags */}
-					{task.tags && task.tags.length > 0 && (
-						<div>
-							<Label>Etiquetas</Label>
-							<div className="flex flex-wrap gap-1 mt-1">
-								{task.tags.map((tag) => (
-									<Badge key={tag} variant="secondary" className="text-xs">
-										{tag}
-									</Badge>
-								))}
-							</div>
-						</div>
-					)}
 
 					{/* Comments Section */}
 					<div className="border-t pt-4">
@@ -247,13 +267,16 @@ export function TaskDetailDialog({
 									className="flex gap-3 p-3 bg-muted/50 rounded-lg"
 								>
 									<Avatar className="h-8 w-8">
-										<AvatarImage src={comment.user?.avatar} />
-										<AvatarFallback>
-											{comment.user?.name
-												?.split(' ')
-												.map((n) => n[0])
-												.join('')}
-										</AvatarFallback>
+										{comment.user?.avatar ? (
+											<AvatarImage src={comment.user?.avatar} />
+										) : (
+											<AvatarFallback>
+												{comment.user?.name
+													?.split(' ')
+													.map((n) => n[0])
+													.join('')}
+											</AvatarFallback>
+										)}
 									</Avatar>
 									<div className="flex-1">
 										<div className="flex items-center gap-2 mb-1">
@@ -261,7 +284,7 @@ export function TaskDetailDialog({
 												{comment.user?.name}
 											</span>
 											<span className="text-xs text-muted-foreground">
-												{format(parseISO(comment.createdAt), 'dd MMM HH:mm', {
+												{format(comment.createdAt, 'dd MMM HH:mm', {
 													locale: es,
 												})}
 											</span>

@@ -205,6 +205,7 @@ export const CreateTaskSchema = TaskSchema.pick({
 
 export const CreateTaskCommentSchema = TaskCommentSchema.pick({
 	content: true,
+	userId: true,
 }).extend({
 	taskId: z.cuid(),
 })
@@ -373,6 +374,15 @@ export const TaskWithRelationsSchema = TaskSchema.extend({
 	createdBy: UserSchema.optional(),
 	comments: z.array(TaskCommentSchema).optional(),
 	attachments: z.array(TaskAttachmentSchema).optional(),
+})
+
+export const TeamMemberRelationsSchema = TeamMemberSchema.extend({
+	user: UserSchema.optional(),
+	company: CompanySchema.optional(),
+})
+
+export const TaskCommentRelationsSchema = TaskCommentSchema.extend({
+	user: UserSchema.optional(),
 })
 
 // =============================================================================

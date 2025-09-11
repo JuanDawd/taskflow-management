@@ -1,5 +1,5 @@
 'use client'
-import { Notifications, NotificationPreferences } from '@/types'
+import { Notifications } from '@/types'
 
 export class NotificationManager {
 	private notifications: Notifications[] = []
@@ -32,6 +32,7 @@ export class NotificationManager {
 	}
 
 	// Add notification
+	// Update addNotification method signature
 	addNotification(
 		notification: Omit<Notifications, 'id' | 'timestamp' | 'read'>,
 	): Notifications {
@@ -148,6 +149,9 @@ export class NotificationManager {
 	subscribe(listener: (notifications: Notifications[]) => void): () => void {
 		this.listeners.add(listener)
 		return () => this.listeners.delete(listener)
+	}
+	unsubscribe(listener: (notifications: Notifications[]) => void): boolean {
+		return this.listeners.delete(listener)
 	}
 
 	// Notify all listeners

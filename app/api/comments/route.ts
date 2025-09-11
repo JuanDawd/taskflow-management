@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { z } from 'zod'
-import { TaskCommentSchema } from '@/lib/validation'
+import { CreateTaskCommentSchema, TaskCommentSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
 	try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json()
-		const validatedData = TaskCommentSchema.parse(body)
+		const validatedData = CreateTaskCommentSchema.parse(body)
 
 		// Check if user has access to the task
 		const task = await db.task.findFirst({

@@ -35,7 +35,6 @@ export interface SearchFilters {
 	priority: string[]
 	assigneeIds: string[]
 	projectIds: string[]
-	tags: string[]
 	dueDateFrom?: Date
 	dueDateTo?: Date
 	createdFrom?: Date
@@ -47,7 +46,6 @@ interface AdvancedSearchProps {
 	onFiltersChange: (filters: SearchFilters) => void
 	projects: Project[]
 	users: User[]
-	availableTags: string[]
 	className?: string
 }
 
@@ -79,7 +77,6 @@ export function AdvancedSearch({
 	onFiltersChange,
 	projects,
 	users,
-	availableTags,
 	className,
 }: AdvancedSearchProps) {
 	const [showAdvanced, setShowAdvanced] = useState(false)
@@ -102,7 +99,6 @@ export function AdvancedSearch({
 			priority: [],
 			assigneeIds: [],
 			projectIds: [],
-			tags: [],
 			dueDateFrom: undefined,
 			dueDateTo: undefined,
 			createdFrom: undefined,
@@ -127,7 +123,6 @@ export function AdvancedSearch({
 		count += localFilters.priority.length
 		count += localFilters.assigneeIds.length
 		count += localFilters.projectIds.length
-		count += localFilters.tags.length
 		if (localFilters.dueDateFrom) count++
 		if (localFilters.dueDateTo) count++
 		if (localFilters.createdFrom) count++
@@ -444,31 +439,6 @@ export function AdvancedSearch({
 									</Popover>
 								</div>
 							</div>
-
-							{/* Tags Filter */}
-							<div className="space-y-3">
-								<Label className="text-sm font-medium">Etiquetas</Label>
-								<div className="flex flex-wrap gap-1">
-									{availableTags.map((tag) => (
-										<Button
-											key={tag}
-											variant={
-												localFilters.tags.includes(tag) ? 'default' : 'outline'
-											}
-											size="sm"
-											className="h-6 text-xs"
-											onClick={() => {
-												updateFilters({
-													tags: toggleArrayFilter(localFilters.tags, tag),
-												})
-											}}
-										>
-											<Tag className="h-3 w-3 mr-1" />
-											{tag}
-										</Button>
-									))}
-								</div>
-							</div>
 						</div>
 					</div>
 				)}
@@ -546,20 +516,6 @@ export function AdvancedSearch({
 												assigneeIds: localFilters.assigneeIds.filter(
 													(u) => u !== userId,
 												),
-											})
-										}
-									/>
-								</Badge>
-							))}
-
-							{localFilters.tags.map((tag) => (
-								<Badge key={tag} variant="secondary" className="text-xs">
-									{tag}
-									<X
-										className="ml-1 h-3 w-3 cursor-pointer"
-										onClick={() =>
-											updateFilters({
-												tags: localFilters.tags.filter((t) => t !== tag),
 											})
 										}
 									/>
