@@ -137,13 +137,6 @@ export function MemberManagement({
 		<div className="space-y-6">
 			{/* Header */}
 			<div className="flex items-center justify-between">
-				<div>
-					<h2 className="text-2xl font-bold">Gestión del Equipo</h2>
-					<p className="text-muted-foreground">
-						Administra los miembros y permisos de tu equipo
-					</p>
-				</div>
-
 				{canManageMembers && (
 					<Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
 						<DialogTrigger asChild>
