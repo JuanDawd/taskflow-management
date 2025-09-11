@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Dispatch } from 'react'
+import { Dispatch } from 'react'
 import {
 	Card,
 	CardContent,

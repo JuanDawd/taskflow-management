@@ -131,7 +131,7 @@ export default function SettingsPage() {
 		}
 	}
 
-	const handleUploadLogo = async (file: File): Promise<string> => {
+	const handleUploadLogo = async (): Promise<string> => {
 		// TODO: Implement file upload logic
 		// This would typically upload to a cloud storage service
 		return 'https://example.com/uploaded-logo.png'

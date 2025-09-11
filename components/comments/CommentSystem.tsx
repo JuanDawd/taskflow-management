@@ -101,6 +101,7 @@ export function CommentSystem({
 				setNewComment('')
 			}
 		} catch (error) {
+			console.error(error)
 			setErrors({ content: 'Error al enviar el comentario' })
 		} finally {
 			setIsLoading(false)

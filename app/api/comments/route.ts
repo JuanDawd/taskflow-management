@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { z } from 'zod'
-import { CreateTaskCommentSchema, TaskCommentSchema } from '@/lib/validation'
+import { CreateTaskCommentSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
 	try {

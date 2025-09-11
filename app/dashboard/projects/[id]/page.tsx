@@ -82,12 +82,12 @@ const statusConfig = {
 	},
 }
 
-const priorityConfig = {
+/* const priorityConfig = {
 	LOW: { color: 'bg-gray-500', label: 'Baja', textColor: 'text-gray-600' },
 	MEDIUM: { color: 'bg-blue-500', label: 'Media', textColor: 'text-blue-600' },
 	HIGH: { color: 'bg-orange-500', label: 'Alta', textColor: 'text-orange-600' },
 	URGENT: { color: 'bg-red-500', label: 'Urgente', textColor: 'text-red-600' },
-}
+} */
 
 export default function ProjectDetailPage() {
 	const params = useParams()
@@ -307,7 +307,7 @@ export default function ProjectDetailPage() {
 	}
 
 	const statusInfo = statusConfig['ACTIVE']
-	const priorityInfo = priorityConfig['LOW']
+	// const priorityInfo = priorityConfig['LOW']
 	const StatusIcon = statusInfo.icon
 
 	const endDate = project.updatedAt

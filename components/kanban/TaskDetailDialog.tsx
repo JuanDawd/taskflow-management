@@ -1,13 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-	Task,
-	TaskComment,
-	TaskCommentRelations,
-	TaskWithRelations,
-	User,
-} from '@/types'
+import { Task, TaskCommentRelations, TaskWithRelations } from '@/types'
 import {
 	Dialog,
 	DialogContent,
@@ -80,17 +74,17 @@ export function TaskDetailDialog({
 				}),
 			})
 
+			const resJson = await response.json()
+
 			if (!response.ok) {
-				const errorData = await response.json()
-				throw new Error(errorData.error || 'Error al enviar invitación')
+				throw new Error(resJson.error || 'Error al enviar invitación')
 			}
 			toast({
 				title: 'Comentario añadido',
 				description: `Se ha agregado el comentario a ${task.id}`,
 			})
-			console.log(response)
-			const comment = {}
-			//setComments([...comments, comment])
+
+			setComments([...comments, resJson])
 			setNewComment('')
 		} catch (error) {
 			console.log(error)
