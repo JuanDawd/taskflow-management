@@ -24,13 +24,7 @@ export async function GET() {
 			},
 		})
 
-		const formattedMembers = members.map((member) => ({
-			...member.user,
-			role: member.role,
-			createdAt: member.createdAt,
-		}))
-
-		return NextResponse.json(formattedMembers)
+		return NextResponse.json(members)
 	} catch (error) {
 		console.error('Error fetching team members:', error)
 		return NextResponse.json(
