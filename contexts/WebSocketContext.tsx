@@ -4,7 +4,6 @@ import { createContext, useContext } from 'react'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useTaskStore } from '@/hooks/useTaskStore'
 import { notificationManager } from '@/lib/notifications'
-import { useSession } from 'next-auth/react'
 import { Task, User } from '@prisma/client'
 
 interface WebSocketMessage {

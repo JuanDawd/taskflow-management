@@ -13,6 +13,8 @@ export async function GET(request: Request, { params }: Context) {
 		const data = await params
 		const id = data.id
 
+		console.log(data, id)
+
 		const session = await getServerSession(authOptions)
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'No autorizado' }, { status: 401 })

@@ -369,7 +369,6 @@ export default function ProjectDetailPage() {
 									Agrega nuevos miembros a tu equipo de proyecto.
 								</DialogDescription>
 							</DialogHeader>
-							{/* Aquí iría el formulario de invitación */}
 							<p className="text-center py-4 text-muted-foreground">
 								Formulario de invitación próximamente
 							</p>

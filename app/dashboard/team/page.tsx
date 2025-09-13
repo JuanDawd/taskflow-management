@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import {
 	CreateTeamMemberForm,
@@ -13,16 +13,13 @@ import { MemberManagement } from '@/components/team/MemberManagement'
 import { useApi } from '@/hooks/useApi'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
-import { User, UserRole } from '@prisma/client'
+import { UserRole } from '@prisma/client'
 
 export default function TeamPage() {
 	const { data: session } = useSession()
 	const { toast } = useToast()
 	const [members, setMembers] = useState<TeamMemberRelations[]>([])
 	const [projects, setProjects] = useState<Project[]>([])
-	const [currentUserRole, setCurrentUserRole] = useState<User['role']>(
-		UserRole.USER,
-	)
 
 	const { loading, execute } = useApi<TeamMember[]>()
 
@@ -36,18 +33,11 @@ export default function TeamPage() {
 		try {
 			await execute(async () => {
 				const response = await fetch('/api/team/members')
+
 				if (!response.ok) throw new Error('Error al cargar miembros')
 				const data = await response.json()
 
 				setMembers(data)
-
-				// Get current user role
-				const currentMember = data.find(
-					(m: TeamMember) => m.id === session?.user?.id,
-				)
-				if (currentMember) {
-					setCurrentUserRole(currentMember.role)
-				}
 
 				return data
 			})
@@ -64,14 +54,19 @@ export default function TeamPage() {
 	const loadProjects = async () => {
 		try {
 			const response = await fetch('/api/projects')
-			if (response.ok) {
-				const data = await response.json()
-				setProjects(data)
-			}
+			if (!response.ok) throw new Error('Error al cargar los proyectos')
+			const data = await response.json()
+			console.log(data)
+			setProjects(data)
 		} catch (error) {
 			console.error('Error loading projects:', error)
 		}
 	}
+
+	const currentUserRole = useMemo(
+		() => session?.user.role || UserRole.USER,
+		[session],
+	)
 
 	const handleInviteMember = async (inviteData: CreateTeamMemberForm) => {
 		try {

@@ -85,6 +85,7 @@ export function MemberManagement({
 	onRemoveMember,
 	currentUserRole,
 }: MemberManagementProps) {
+	console.log(projects)
 	const [searchTerm, setSearchTerm] = useState('')
 	const [showInviteDialog, setShowInviteDialog] = useState(false)
 	const [inviteData, setInviteData] = useState({
@@ -103,7 +104,6 @@ export function MemberManagement({
 				member.user?.email.toLowerCase().includes(searchTerm.toLowerCase()),
 		)
 	}, [members, searchTerm])
-	console.log({ filteredMembers })
 
 	const handleInvite = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -140,7 +140,7 @@ export function MemberManagement({
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className=" flex items-center justify-end">
 				{canManageMembers && (
 					<Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
 						<DialogTrigger asChild>
