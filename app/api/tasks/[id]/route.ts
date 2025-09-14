@@ -5,7 +5,6 @@ import { db } from '@/lib/db'
 import { z } from 'zod'
 import { getToken } from 'next-auth/jwt'
 import { UpdateTaskSchema } from '@/lib/validation'
-import { notifyTaskCompleted } from '@/lib/notification-triggers'
 
 interface Context {
 	params: Promise<{ id: string }>

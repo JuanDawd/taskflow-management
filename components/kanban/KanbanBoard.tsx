@@ -115,15 +115,7 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 					</h1>
 					<p className="text-gray-600">Gestiona y organiza tus tareas</p>
 				</div>
-				<Button
-					variant="destructive"
-					onClick={() => {
-						console.log('🧪 Testing manual toast')
-						toast('Message?')
-					}}
-				>
-					Test Toast
-				</Button>
+
 				<Button onClick={() => setCreateDialogOpen(true)}>
 					<PlusIcon className="mr-2 h-4 w-4" />
 					Nueva Tarea
