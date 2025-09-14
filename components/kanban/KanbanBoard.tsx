@@ -7,7 +7,6 @@ import { PlusIcon } from '@radix-ui/react-icons'
 import { TaskCard } from './TaskCard'
 import CreateTaskDialog from './CreateTaskDialog'
 import { Task } from '@/types'
-import { toast } from 'sonner'
 
 interface KanbanBoardProps {
 	projectId?: string
