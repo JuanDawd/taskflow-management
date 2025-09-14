@@ -85,7 +85,6 @@ export function MemberManagement({
 	onRemoveMember,
 	currentUserRole,
 }: MemberManagementProps) {
-	console.log(projects)
 	const [searchTerm, setSearchTerm] = useState('')
 	const [showInviteDialog, setShowInviteDialog] = useState(false)
 	const [inviteData, setInviteData] = useState({

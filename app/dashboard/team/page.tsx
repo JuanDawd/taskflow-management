@@ -53,7 +53,6 @@ export default function TeamPage() {
 			const response = await fetch('/api/projects')
 			if (!response.ok) throw new Error('Error al cargar los proyectos')
 			const data = await response.json()
-			console.log(data)
 			setProjects(data)
 		} catch (error) {
 			console.error('Error loading projects:', error)

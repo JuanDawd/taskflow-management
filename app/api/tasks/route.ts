@@ -77,14 +77,11 @@ export async function POST(request: NextRequest) {
 		const body = await request.json()
 		const { dueDate } = body
 		const parsedDueDate = dueDate ? new Date(dueDate) : null
-		console.log('Here', { parsedDueDate, body })
 		const validatedData = CreateTaskSchema.parse({
 			...body,
 			dueDate: parsedDueDate,
 			status: 'BACKLOG',
 		})
-
-		console.log('Second', validatedData)
 
 		// Check if user has access to the project
 		const project = await db.project.findFirst({

@@ -65,7 +65,7 @@ export default function SettingsPage() {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 
 			toast.error('Error', {
 				description: 'error',
@@ -115,7 +115,7 @@ export default function SettingsPage() {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 
 			toast.error('Error', {
 				description: 'No se pudo actualizar su Compañia',

@@ -113,9 +113,9 @@ export default function ProjectsPage() {
 				})
 			}
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 			toast.error('Error', {
-				description: 'error',
+				description: 'Error al actualizar su proyecto',
 			})
 		}
 	}
@@ -135,7 +135,7 @@ export default function ProjectsPage() {
 				description: 'El proyecto se ha eliminado correctamente',
 			})
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 			toast.error('Error', {
 				description: 'Error al eliminar el proyecto',
 			})

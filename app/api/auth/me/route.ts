@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
 		}
 
-		console.log(token)
-
 		const user = await db.user.findUnique({
 			where: { id: token.id },
 			include: {
@@ -43,7 +41,7 @@ export async function GET(request: NextRequest) {
 			},
 		})
 	} catch (error) {
-		console.log(error)
+		console.error(error)
 		return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
 	}
 }

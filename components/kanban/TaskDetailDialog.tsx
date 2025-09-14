@@ -86,7 +86,7 @@ export function TaskDetailDialog({
 			setComments([...comments, resJson])
 			setNewComment('')
 		} catch (error) {
-			console.log(error)
+			console.error(error)
 
 			toast('Error', {
 				description: 'error',
