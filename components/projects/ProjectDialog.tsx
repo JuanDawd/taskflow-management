@@ -22,7 +22,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
 import { z } from 'zod'
-import { toast } from '@/hooks/use-toast'
 import { CreateProjectSchema } from '@/lib/validation'
 import { useSession } from 'next-auth/react'
 import { Users, X } from 'lucide-react'
@@ -35,6 +34,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '../ui/select'
+import { toast } from 'sonner'
 
 interface ProjectDialogProps {
 	project?: ProjectWithRelations
@@ -142,10 +142,8 @@ export function ProjectDialog({
 					}
 				})
 				setErrors(fieldErrors)
-				toast({
-					title: 'Error de validación',
+				toast('Error de validación', {
 					description: 'Por favor corrige los errores en el formulario.',
-					variant: 'destructive',
 				})
 			}
 		} finally {
@@ -156,10 +154,8 @@ export function ProjectDialog({
 	const addMember = async (memberId: string) => {
 		const newMember = unselectedMembers.find((member) => member.id === memberId)
 		if (!newMember) {
-			toast({
-				variant: 'destructive',
+			toast('Error al añadir al miembro', {
 				description: 'El miembro no existe',
-				title: 'Error al añadir al miembro',
 			})
 		} else {
 			setSelectedMembers((prevSM) => [...prevSM, newMember])
@@ -173,10 +169,8 @@ export function ProjectDialog({
 	const removeMember = async (memberId: string) => {
 		const oldMember = selectedMembers.find((member) => member.id === memberId)
 		if (!oldMember) {
-			toast({
-				variant: 'destructive',
+			toast('Error al eliminar al miembro', {
 				description: 'El miembro no existe',
-				title: 'Error al eliminar al miembro',
 			})
 		} else {
 			setUnselectedMembers((prevSM) => [...prevSM, oldMember])

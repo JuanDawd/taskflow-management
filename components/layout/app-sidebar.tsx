@@ -21,7 +21,7 @@ import {
 	GearIcon,
 } from '@radix-ui/react-icons'
 import { signOut, useSession } from 'next-auth/react'
-import router from 'next/router'
+import { useRouter } from 'next/navigation'
 import { Button } from '../ui/button'
 import { usePathname } from 'next/navigation'
 import {
@@ -36,6 +36,7 @@ import { ThemeToggle } from '../theme-toggle'
 export function AppSidebar() {
 	const { data: session } = useSession()
 	const pathname = usePathname()
+	const router = useRouter()
 
 	const handleLogout = async () => {
 		try {
@@ -44,6 +45,9 @@ export function AppSidebar() {
 		} catch (error) {
 			console.error('Error logging out:', error)
 		}
+	}
+	const goto = () => {
+		router.push('/dashboard/settings')
 	}
 
 	// Menu items.
@@ -110,7 +114,7 @@ export function AppSidebar() {
 								</DropdownMenuItem>
 								<DropdownMenuItem asChild>
 									<Button
-										onClick={handleLogout}
+										onClick={goto}
 										variant="ghost"
 										size="sm"
 										className="w-full justify-start"

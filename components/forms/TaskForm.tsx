@@ -41,11 +41,11 @@ import {
 import { Calendar } from '@/components/ui/calendar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { useToast } from '@/hooks/use-toast'
 import { Task } from '@prisma/client'
 import { CreateTaskForm, Project, User } from '@/types'
 import { CreateTaskSchema } from '@/lib/validation'
 import { priorityLabels, statusLabels } from './constants'
+import { toast } from 'sonner'
 
 interface TaskFormProps {
 	task?: Task
@@ -65,7 +65,6 @@ export function TaskForm({
 	const [isLoading, setIsLoading] = useState(false)
 	const [users, setUsers] = useState<User[]>([])
 	const [projects, setProjects] = useState<Project[]>([])
-	const { toast } = useToast()
 
 	const form = useForm<CreateTaskForm>({
 		resolver: zodResolver(CreateTaskSchema),
@@ -129,8 +128,7 @@ export function TaskForm({
 
 			await onSubmit(data)
 
-			toast({
-				title: task ? 'Tarea actualizada' : 'Tarea creada',
+			toast(task ? 'Tarea actualizada' : 'Tarea creada', {
 				description: task
 					? 'La tarea ha sido actualizada exitosamente'
 					: 'La tarea ha sido creada exitosamente',
@@ -141,17 +139,13 @@ export function TaskForm({
 
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
-			toast({
-				title: 'Error',
+			toast('Error', {
 				description: 'Hubo un error al guardar la tarea',
-				variant: 'destructive',
 			})
 		} finally {
 			setIsLoading(false)
 		}
 	}
-
-	
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>

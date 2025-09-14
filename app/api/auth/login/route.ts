@@ -1,4 +1,3 @@
-// app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
@@ -30,7 +29,6 @@ export async function POST(request: NextRequest) {
 				{ status: 401 },
 			)
 		}
-
 
 		// Just return user data for NextAuth
 		return NextResponse.json({

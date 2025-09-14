@@ -16,8 +16,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '@/components/ui/dialog'
-import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 interface Attachment {
 	id: string
@@ -43,7 +43,6 @@ export function AttachmentViewer({
 	onDelete,
 	canDelete = false,
 }: AttachmentViewerProps) {
-	const { toast } = useToast()
 
 	const getFileIcon = (type: string) => {
 		if (type.startsWith('image/')) return <ImageIcon className="h-4 w-4" />
@@ -73,10 +72,9 @@ export function AttachmentViewer({
 			document.body.removeChild(a)
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
-			toast({
-				title: 'Error',
+			toast( 'Error',{
 				description: 'No se pudo descargar el archivo',
-				variant: 'destructive',
+
 			})
 		}
 	}
@@ -85,16 +83,14 @@ export function AttachmentViewer({
 		if (onDelete) {
 			try {
 				await onDelete(id)
-				toast({
-					title: 'Archivo eliminado',
+				toast( 'Archivo eliminado',{
 					description: 'El archivo se ha eliminado exitosamente',
 				})
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (error) {
-				toast({
-					title: 'Error',
+				toast( 'Error',{
 					description: 'No se pudo eliminar el archivo',
-					variant: 'destructive',
+
 				})
 			}
 		}

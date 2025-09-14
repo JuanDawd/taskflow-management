@@ -5,6 +5,7 @@ import { db } from '@/lib/db'
 import { z } from 'zod'
 import { getToken } from 'next-auth/jwt'
 import { UpdateTaskSchema } from '@/lib/validation'
+import { notifyTaskCompleted } from '@/lib/notification-triggers'
 
 interface Context {
 	params: Promise<{ id: string }>
@@ -146,14 +147,14 @@ export async function PUT(request: NextRequest, { params }: Context) {
 
 export async function PATCH(request: NextRequest, { params }: Context) {
 	try {
-				const token = await getToken({
-					req: request,
-					secret: process.env.NEXTAUTH_SECRET,
-				})
-		
-				if (!token) {
-					return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-				}
+		const token = await getToken({
+			req: request,
+			secret: process.env.NEXTAUTH_SECRET,
+		})
+
+		if (!token) {
+			return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+		}
 		const userId = token.id
 		const userRole = token.role
 

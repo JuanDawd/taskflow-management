@@ -24,8 +24,8 @@ import {
 import { Calendar, MessageCircle, Send, Edit, Save, X } from 'lucide-react'
 import { format, isValid } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { toast } from '@/hooks/use-toast'
 import { useSession } from 'next-auth/react'
+import { toast } from 'sonner'
 
 interface TaskDetailDialogProps {
 	task: TaskWithRelations
@@ -79,8 +79,7 @@ export function TaskDetailDialog({
 			if (!response.ok) {
 				throw new Error(resJson.error || 'Error al enviar invitación')
 			}
-			toast({
-				title: 'Comentario añadido',
+			toast('Comentario añadido', {
 				description: `Se ha agregado el comentario a ${task.id}`,
 			})
 
@@ -89,10 +88,8 @@ export function TaskDetailDialog({
 		} catch (error) {
 			console.log(error)
 
-			toast({
-				title: 'Error',
+			toast('Error', {
 				description: 'error',
-				variant: 'destructive',
 			})
 		}
 	}

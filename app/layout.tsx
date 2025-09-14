@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
-import { Toaster } from 'sonner'
 import ClientSessionProvider from '@/components/providers/SessionProvider'
 import { ThemeProvider } from 'next-themes'
-import { WebSocketProvider } from '@/contexts/WebSocketContext'
+import { NotificationProvider } from '@/components/notification-provider'
+import { Toaster } from 'sonner'
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -38,10 +38,13 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						<WebSocketProvider>
-							{children}
-							<Toaster />
-						</WebSocketProvider>
+						<NotificationProvider>{children}</NotificationProvider>
+						<Toaster
+							position="top-right"
+							expand={true}
+							richColors
+							closeButton
+						/>
 					</ThemeProvider>
 				</ClientSessionProvider>
 			</body>

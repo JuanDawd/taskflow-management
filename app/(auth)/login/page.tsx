@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card'
 import { CheckIcon } from '@radix-ui/react-icons'
 import { signIn } from 'next-auth/react'
-import { toast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
 	const [email, setEmail] = useState('')
@@ -35,9 +35,7 @@ export default function LoginPage() {
 			if (result?.ok) {
 				router.push('/dashboard')
 			} else {
-				toast({
-					variant: 'destructive',
-					title: 'Error de inicio de sesión',
+				toast.error('Error de inicio de sesión', {
 					description: result?.error || 'Ocurrió un error inesperado.',
 				})
 			}

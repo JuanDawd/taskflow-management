@@ -29,6 +29,10 @@ export default function Header() {
 			header: 'Gestión del Equipo',
 			subheader: 'Administra los miembros y permisos de tu equipo',
 		},
+		'/dashboard/settings': {
+			header: 'Configuración de usuario',
+			subheader: 'Gestiona tu perfil y configuración de la empresa',
+		},
 	} as const
 
 	const defaultHeader: NavigationItem = {

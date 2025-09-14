@@ -10,7 +10,6 @@ import {
 } from '@/types'
 import KanbanBoard from '@/components/kanban/KanbanBoard'
 import { useApi } from '@/hooks/useApi'
-import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,6 +57,7 @@ import {
 import { format, isValid, differenceInDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 const statusConfig = {
 	ACTIVE: {
@@ -92,7 +92,6 @@ const statusConfig = {
 export default function ProjectDetailPage() {
 	const params = useParams()
 	const router = useRouter()
-	const { toast } = useToast()
 
 	// Estados principales
 	const [project, setProject] = useState<ProjectWithRelations | null>(null)
@@ -136,10 +135,8 @@ export default function ProjectDetailPage() {
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : 'No se pudo cargar el proyecto'
-			toast({
-				title: 'Error',
+			toast.error('Error', {
 				description: errorMessage,
-				variant: 'destructive',
 			})
 
 			// Redirigir a la lista de proyectos si hay error
@@ -147,7 +144,7 @@ export default function ProjectDetailPage() {
 				router.push('/dashboard/projects')
 			}, 2000)
 		}
-	}, [execute, params.id, router, toast])
+	}, [execute, params.id, router])
 
 	useEffect(() => {
 		loadProjectData()
@@ -207,29 +204,25 @@ export default function ProjectDetailPage() {
 		switch (action) {
 			case 'duplicate':
 				// Implementar duplicación de proyecto
-				toast({
-					title: 'Funcionalidad en desarrollo',
+				toast.info('Funcionalidad en desarrollo', {
 					description: 'Duplicar proyecto próximamente',
 				})
 				break
 			case 'archive':
 				// Implementar archivado
-				toast({
-					title: 'Funcionalidad en desarrollo',
+				toast.info('Funcionalidad en desarrollo', {
 					description: 'Archivar proyecto próximamente',
 				})
 				break
 			case 'export':
 				// Implementar exportación
-				toast({
-					title: 'Funcionalidad en desarrollo',
+				toast.info('Funcionalidad en desarrollo', {
 					description: 'Exportar datos próximamente',
 				})
 				break
 			case 'share':
 				// Implementar compartir
-				toast({
-					title: 'Funcionalidad en desarrollo',
+				toast.info('Funcionalidad en desarrollo', {
 					description: 'Compartir proyecto próximamente',
 				})
 				break

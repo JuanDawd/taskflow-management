@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { CreateTaskSchema } from '@/lib/validation'
+import { notifyTaskCreated } from '@/lib/notification-triggers'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -76,11 +77,14 @@ export async function POST(request: NextRequest) {
 		const body = await request.json()
 		const { dueDate } = body
 		const parsedDueDate = dueDate ? new Date(dueDate) : null
-		console.log('Here', parsedDueDate)
+		console.log('Here', { parsedDueDate, body })
 		const validatedData = CreateTaskSchema.parse({
 			...body,
 			dueDate: parsedDueDate,
+			status: 'BACKLOG',
 		})
+
+		console.log('Second', validatedData)
 
 		// Check if user has access to the project
 		const project = await db.project.findFirst({
@@ -123,6 +127,13 @@ export async function POST(request: NextRequest) {
 				},
 			},
 		})
+
+		await notifyTaskCreated(
+			task.id,
+			task.projectId,
+			session?.user.name,
+			task.title,
+		)
 
 		return NextResponse.json(task, { status: 201 })
 	} catch (error) {

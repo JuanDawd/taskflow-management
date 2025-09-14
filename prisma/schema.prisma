@@ -38,6 +38,13 @@ enum TaskPriority {
   URGENT
 }
 
+enum UserNotifications {
+  PUSH
+  EMAIL
+  BOTH
+  NONE
+}
+
 model Company {
   id        String   @id @default(cuid())
   name      String
@@ -79,6 +86,7 @@ model User {
   // Relación con team members
   teamMember TeamMember?
 
+  notificationMethod UserNotifications @default(PUSH) 
   notifications Notification[]
 
 

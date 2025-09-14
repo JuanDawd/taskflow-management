@@ -11,13 +11,12 @@ import {
 } from '@/types'
 import { MemberManagement } from '@/components/team/MemberManagement'
 import { useApi } from '@/hooks/useApi'
-import { useToast } from '@/hooks/use-toast'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { UserRole } from '@prisma/client'
+import { toast } from 'sonner'
 
 export default function TeamPage() {
 	const { data: session } = useSession()
-	const { toast } = useToast()
 	const [members, setMembers] = useState<TeamMemberRelations[]>([])
 	const [projects, setProjects] = useState<Project[]>([])
 
@@ -43,10 +42,8 @@ export default function TeamPage() {
 			})
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
-			toast({
-				title: 'Error',
+			toast.error('Error', {
 				description: 'No se pudieron cargar los miembros del equipo',
-				variant: 'destructive',
 			})
 		}
 	}
@@ -81,17 +78,14 @@ export default function TeamPage() {
 				throw new Error(errorData.error || 'Error al enviar invitación')
 			}
 
-			toast({
-				title: 'Invitación enviada',
-				description: `Se ha enviado una invitación a ${inviteData.userId}`,
+			toast.success('Miembro añadio', {
+				description: `Se ha añadido como nuevo miembro a ${inviteData.userId}`,
 			})
 		} catch (error) {
 			console.error(error)
 
-			toast({
-				title: 'Error',
-				description: 'error',
-				variant: 'destructive',
+			toast.error('Error', {
+				description: 'No se pudo añadir al nuevo miembro',
 			})
 		}
 	}
@@ -115,17 +109,14 @@ export default function TeamPage() {
 			const updatedMember = await response.json()
 			setMembers(members.map((m) => (m.id === memberId ? updatedMember : m)))
 
-			toast({
-				title: 'Miembro actualizado',
+			toast('Miembro actualizado', {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
 			console.error(error)
 
-			toast({
-				title: 'Error',
+			toast('Error', {
 				description: 'error',
-				variant: 'destructive',
 			})
 		}
 	}
@@ -143,17 +134,14 @@ export default function TeamPage() {
 
 			setMembers(members.filter((m) => m.id !== memberId))
 
-			toast({
-				title: 'Miembro eliminado',
+			toast('Miembro eliminado', {
 				description: 'El miembro ha sido eliminado del equipo',
 			})
 		} catch (error) {
 			console.error(error)
 
-			toast({
-				title: 'Error',
+			toast('Error', {
 				description: 'error',
-				variant: 'destructive',
 			})
 		}
 	}

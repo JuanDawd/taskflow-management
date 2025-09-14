@@ -19,8 +19,9 @@ import {
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Download, FileText, BarChart3, Calendar } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+
 import { DateRange } from 'react-day-picker'
+import { toast } from 'sonner'
 
 interface ReportConfig {
 	type: 'task-summary' | 'productivity' | 'time-tracking' | 'project-status'
@@ -54,8 +55,6 @@ export function ReportGenerator() {
 	})
 	const [isGenerating, setIsGenerating] = useState(false)
 
-	const { toast } = useToast()
-
 	const reportTypes = [
 		{
 			value: 'task-summary',
@@ -81,10 +80,8 @@ export function ReportGenerator() {
 
 	const handleGenerateReport = async () => {
 		if (!config.dateRange?.from || !config.dateRange?.to) {
-			toast({
-				title: 'Error',
+			toast('Error', {
 				description: 'Debes seleccionar un rango de fechas',
-				variant: 'destructive',
 			})
 			return
 		}
@@ -113,16 +110,13 @@ export function ReportGenerator() {
 			window.URL.revokeObjectURL(url)
 			document.body.removeChild(a)
 
-			toast({
-				title: 'Reporte generado',
+			toast('Reporte generado', {
 				description: 'El reporte se ha descargado exitosamente',
 			})
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
-			toast({
-				title: 'Error',
+			toast('Error', {
 				description: 'No se pudo generar el reporte',
-				variant: 'destructive',
 			})
 		} finally {
 			setIsGenerating(false)

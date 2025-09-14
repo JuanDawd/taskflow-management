@@ -1,54 +1,40 @@
-import { toast, useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 export const showSuccessToast = (title: string, description?: string) => {
-	toast({
-		variant: 'success',
-		title,
+	toast.success(title, {
 		description,
 	})
 }
 
 export const showErrorToast = (title: string, description?: string) => {
-	toast({
-		variant: 'destructive',
-		title,
+	toast.error(title, {
 		description,
 	})
 }
 
 export const showWarningToast = (title: string, description?: string) => {
-	toast({
-		variant: 'warning',
-		title,
+	toast.warning(title, {
 		description,
 	})
 }
 
 export const showInfoToast = (title: string, description?: string) => {
-	toast({
-		variant: 'info',
-		title,
+	toast.info(title, {
 		description,
 	})
 }
 
 // Hook personalizado para manejar errores de API
 export const useApiToast = () => {
-	const { toast } = useToast()
-
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const showApiError = (error: any) => {
-		toast({
-			variant: 'destructive',
-			title: 'Error',
+		toast.error('Error', {
 			description: error?.message || 'Ocurrió un error inesperado',
 		})
 	}
 
 	const showApiSuccess = (message: string) => {
-		toast({
-			variant: 'success',
-			title: '¡Éxito!',
+		toast.success('¡Éxito!', {
 			description: message,
 		})
 	}

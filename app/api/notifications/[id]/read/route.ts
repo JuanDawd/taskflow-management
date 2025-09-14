@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 interface Context {
-	params: Promise<{ id: string }> // Ahora es Promise
+	params: Promise<{ id: string }>
 }
 
 export async function POST(request: NextRequest, { params }: Context) {

@@ -23,7 +23,6 @@ import {
 	Trash2,
 } from 'lucide-react'
 import { useApi } from '@/hooks/useApi'
-import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import {
 	DropdownMenu,
@@ -32,9 +31,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
+import { toast } from 'sonner'
 
 export default function ProjectsPage() {
-	const { toast } = useToast()
 	const [projects, setProjects] = useState<Project[]>([])
 	const [availableMembers, setAvailableMembers] = useState<User[]>([])
 	const [searchTerm, setSearchTerm] = useState('')
@@ -61,10 +60,8 @@ export default function ProjectsPage() {
 			})
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
-			toast({
-				title: 'Error',
+			toast.error('Error', {
 				description: 'No se pudieron cargar los proyectos',
-				variant: 'destructive',
 			})
 		}
 	}
@@ -106,23 +103,19 @@ export default function ProjectsPage() {
 				setProjects(
 					projects.map((p) => (p.id === savedProject.id ? savedProject : p)),
 				)
-				toast({
-					title: 'Proyecto actualizado',
+				toast.success('Proyecto actualizado', {
 					description: 'Los cambios se han guardado correctamente',
 				})
 			} else {
 				setProjects([savedProject, ...projects])
-				toast({
-					title: 'Proyecto creado',
+				toast.success('Proyecto creado', {
 					description: 'El nuevo proyecto se ha creado correctamente',
 				})
 			}
 		} catch (error) {
 			console.log(error)
-			toast({
-				title: 'Error',
+			toast.error('Error', {
 				description: 'error',
-				variant: 'destructive',
 			})
 		}
 	}
@@ -138,16 +131,13 @@ export default function ProjectsPage() {
 			}
 
 			setProjects(projects.filter((p) => p.id !== projectId))
-			toast({
-				title: 'Proyecto eliminado',
+			toast.success('Proyecto eliminado', {
 				description: 'El proyecto se ha eliminado correctamente',
 			})
 		} catch (error) {
 			console.log(error)
-			toast({
-				title: 'Error',
-				description: 'error',
-				variant: 'destructive',
+			toast.error('Error', {
+				description: 'Error al eliminar el proyecto',
 			})
 		}
 	}

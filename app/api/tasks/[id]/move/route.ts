@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { notifyTaskCompleted } from '@/lib/notification-triggers'
 
 interface Context {
 	params: Promise<{ id: string }>
@@ -63,6 +64,15 @@ export async function POST(request: NextRequest, { params }: Context) {
 				},
 			},
 		})
+
+		if (status === 'DONE') {
+			await notifyTaskCompleted(
+				updatedTask.id,
+				updatedTask.projectId,
+				session.user.name,
+				updatedTask.title,
+			)
+		}
 
 		return NextResponse.json(updatedTask)
 	} catch (error) {

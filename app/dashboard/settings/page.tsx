@@ -6,11 +6,10 @@ import { UserSettings } from '@/components/settings/UserSettings'
 import { CompanySettings } from '@/components/settings/CompanySettings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
-import { useToast } from '@/hooks/use-toast'
 import { Building2, User as UserIcon } from 'lucide-react'
+import { toast } from 'sonner'
 
 export default function SettingsPage() {
-	const { toast } = useToast()
 	const [user, setUser] = useState<User | null>(null)
 	const [company, setCompany] = useState<Company | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -62,17 +61,14 @@ export default function SettingsPage() {
 			const updatedUser = await response.json()
 			setUser(updatedUser)
 
-			toast({
-				title: 'Perfil actualizado',
+			toast.success('Perfil actualizado', {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
 			console.log(error)
 
-			toast({
-				title: 'Error',
+			toast.error('Error', {
 				description: 'error',
-				variant: 'destructive',
 			})
 		}
 	}
@@ -90,8 +86,7 @@ export default function SettingsPage() {
 				throw new Error(errorData.error || 'Error al actualizar contraseña')
 			}
 
-			toast({
-				title: 'Contraseña actualizada',
+			toast.success('Contraseña actualizada', {
 				description: 'Tu contraseña se ha cambiado correctamente',
 			})
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -116,17 +111,14 @@ export default function SettingsPage() {
 			const updatedCompany = await response.json()
 			setCompany(updatedCompany)
 
-			toast({
-				title: 'Empresa actualizada',
+			toast.success('Empresa actualizada', {
 				description: 'Los cambios se han guardado correctamente',
 			})
 		} catch (error) {
 			console.log(error)
 
-			toast({
-				title: 'Error',
-				description: 'error',
-				variant: 'destructive',
+			toast.error('Error', {
+				description: 'No se pudo actualizar su Compañia',
 			})
 		}
 	}
@@ -161,15 +153,6 @@ export default function SettingsPage() {
 	return (
 		<div className="max-w-4xl mx-auto">
 			<Tabs defaultValue="user" className="space-y-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-3xl font-bold">Configuración</h1>
-						<p className="text-muted-foreground">
-							Gestiona tu perfil y configuración de la empresa
-						</p>
-					</div>
-				</div>
-
 				<TabsList className="grid w-full grid-cols-2 max-w-md">
 					<TabsTrigger value="user" className="flex items-center gap-2">
 						<UserIcon className="h-4 w-4" />

@@ -7,6 +7,7 @@ import { PlusIcon } from '@radix-ui/react-icons'
 import { TaskCard } from './TaskCard'
 import CreateTaskDialog from './CreateTaskDialog'
 import { Task } from '@/types'
+import { toast } from 'sonner'
 
 interface KanbanBoardProps {
 	projectId?: string
@@ -73,8 +74,8 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 		if (!draggedTask) return
 
 		try {
-			const response = await fetch(`/api/tasks/${draggedTask}`, {
-				method: 'PATCH',
+			const response = await fetch(`/api/tasks/${draggedTask}/move`, {
+				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ status: newStatus }),
 			})
@@ -114,6 +115,15 @@ export default function KanbanBoard({ projectId }: KanbanBoardProps) {
 					</h1>
 					<p className="text-gray-600">Gestiona y organiza tus tareas</p>
 				</div>
+				<Button
+					variant="destructive"
+					onClick={() => {
+						console.log('🧪 Testing manual toast')
+						toast('Message?')
+					}}
+				>
+					Test Toast
+				</Button>
 				<Button onClick={() => setCreateDialogOpen(true)}>
 					<PlusIcon className="mr-2 h-4 w-4" />
 					Nueva Tarea
