@@ -5,6 +5,7 @@ import ClientSessionProvider from '@/components/providers/SessionProvider'
 import { ThemeProvider } from 'next-themes'
 import { NotificationProvider } from '@/components/notification-provider'
 import { Toaster } from 'sonner'
+import { Analytics } from '@vercel/analytics/next'
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -45,6 +46,7 @@ export default function RootLayout({
 							richColors
 							closeButton
 						/>
+						<Analytics />
 					</ThemeProvider>
 				</ClientSessionProvider>
 			</body>

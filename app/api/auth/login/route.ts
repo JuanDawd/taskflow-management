@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
 		if (!user) {
 			return NextResponse.json(
-				{ error: 'Credenciales inválidas' },
+				{ error: 'El usuario no existe' },
 				{ status: 401 },
 			)
 		}
